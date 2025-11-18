@@ -6,12 +6,11 @@
 
 ## 📁 프로젝트 구조
 
+```
 runroyale/
-├── client/ # React + Vite + Tailwind (Frontend)
-└── server/ # Node.js + Express + MongoDB (Backend)
-
-yaml
-코드 복사
+├── client/    # React + Vite + Tailwind (Frontend)
+└── server/    # Node.js + Express + MongoDB (Backend)
+```
 
 ---
 

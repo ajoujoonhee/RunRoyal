@@ -1,13 +1,23 @@
+// server/src/middlewares/auth.js
 import jwt from "jsonwebtoken";
 
-export function requireAuth(req, res, next) {
-  const h = req.headers.authorization || "";
-  const token = h.startsWith("Bearer ") ? h.slice(7) : null;
-  if (!token) return res.status(401).json({ message: "No token" });
+export function authMiddleware(req, res, next) {
+  const authHeader = req.header("Authorization") || "";
+
+  const token = authHeader.startsWith("Bearer ")
+    ? authHeader.slice(7)
+    : null;
+
+  if (!token) {
+    return res.status(401).json({ message: "로그인이 필요합니다.(토큰 없음)" });
+  }
+
   try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET); // { id, email }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.userId = decoded.id;
     next();
-  } catch {
-    res.status(401).json({ message: "Invalid token" });
+  } catch (err) {
+    console.error("JWT verify error:", err.message);
+    return res.status(401).json({ message: "유효하지 않은 토큰입니다." });
   }
 }

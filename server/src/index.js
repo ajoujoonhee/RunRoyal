@@ -8,20 +8,19 @@ import runRoutes from "./routes/runs.js";
 
 const app = express();
 
-// 환경 변수
 const PORT = process.env.PORT || 4000;
 const MONGO_URI = process.env.MONGO_URI;
+const CORS_ORIGIN = process.env.CORS_ORIGIN || "http://localhost:5173";
 
-// CORS origin을 콤마로 분리해 배열로 변환
-const rawOrigins = process.env.CORS_ORIGIN || "";
-const allowedOrigins = rawOrigins
+// 콤마로 전달된 오리진들을 배열로 변환
+const allowedOrigins = (CORS_ORIGIN || "")
   .split(",")
-  .map((origin) => origin.trim())
+  .map((o) => o.trim())
   .filter(Boolean);
 
 app.use(
   cors({
-    origin: allowedOrigins.length ? allowedOrigins : "*",
+    origin: allowedOrigins,
     credentials: true,
   })
 );
@@ -30,7 +29,7 @@ app.use(express.json());
 // 헬스 체크
 app.get("/health", (_, res) => res.send("OK"));
 
-// 라우팅
+// 라우트
 app.use("/api/auth", authRoutes);
 app.use("/api/runs", runRoutes);
 
@@ -38,13 +37,13 @@ app.use("/api/runs", runRoutes);
 (async () => {
   try {
     await mongoose.connect(MONGO_URI);
-    console.log("MongoDB connected");
+    console.log("✅ MongoDB connected");
 
     app.listen(PORT, () => {
-      console.log(`http://localhost:${PORT}`);
+      console.log(`🚀 http://localhost:${PORT}`);
     });
   } catch (err) {
-    console.error("MongoDB connection error:", err);
+    console.error("❌ MongoDB connection error:", err);
     process.exit(1);
   }
 })();

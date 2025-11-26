@@ -38,13 +38,13 @@ app.use("/api/runs", runRoutes);
 (async () => {
   try {
     await mongoose.connect(MONGO_URI);
-    console.log("✅MongoDB connected");
+    console.log("MongoDB connected");
 
     app.listen(PORT, () => {
-      console.log(`🚀 http://localhost:${PORT}`);
+      console.log(`http://localhost:${PORT}`);
     });
   } catch (err) {
-    console.error("❌MongoDB connection error:", err);
+    console.error("MongoDB connection error:", err);
     process.exit(1);
   }
 })();

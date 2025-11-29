@@ -12,18 +12,24 @@ const PORT = process.env.PORT || 4000;
 const MONGO_URI = process.env.MONGO_URI;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || "http://localhost:5173";
 
-// 콤마로 전달된 오리진들을 배열로 변환
+// 콤마 구분 문자열을 배열로 변환
 const allowedOrigins = (CORS_ORIGIN || "")
   .split(",")
   .map((o) => o.trim())
   .filter(Boolean);
 
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin(origin, cb) {
+    if (!origin) return cb(null, true); // 서버 간 호출/포스트맨
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    return cb(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+};
+
+// 미들웨어
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // 프리플라이트 대응
 app.use(express.json());
 
 // 헬스 체크

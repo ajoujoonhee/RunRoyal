@@ -1,6 +1,18 @@
 ﻿// client/src/pages/Dashboard.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  Legend,
+  BarChart,
+  Bar,
+} from "recharts";
 import api, { setToken } from "../lib/api";
 
 export default function Dashboard() {
@@ -167,6 +179,38 @@ export default function Dashboard() {
     draw: "무승부",
   };
 
+  const formatPaceValue = (sec) => {
+    if (!sec && sec !== 0) return "-";
+    const m = Math.floor(sec / 60);
+    const s = Math.round(sec % 60);
+    return `${m}분 ${s}초/km`;
+  };
+
+  const chartData = useMemo(() => {
+    return [...runs]
+      .reverse()
+      .map((run, idx, arr) => {
+        const paceSec = run.time && run.distance ? run.time / run.distance : null;
+        return {
+          name: run.createdAt
+            ? new Date(run.createdAt).toLocaleDateString()
+            : `#${arr.length - idx}`,
+          distance: run.distance,
+          timeMin: run.time ? run.time / 60 : 0,
+          paceSec,
+        };
+      })
+      .slice(-10); // 최근 10개만 차트
+  }, [runs]);
+
+  const stats = useMemo(() => {
+    const totalDistance = runs.reduce((sum, r) => sum + (r.distance || 0), 0);
+    const totalTime = runs.reduce((sum, r) => sum + (r.time || 0), 0);
+    const count = runs.length;
+    const avgPaceSec = totalDistance > 0 ? totalTime / totalDistance : null;
+    return { totalDistance, totalTime, count, avgPaceSec };
+  }, [runs]);
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto mb-8 flex items-center justify-between">
@@ -276,6 +320,70 @@ export default function Dashboard() {
       </div>
 
       <div className="max-w-4xl mx-auto mt-6">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border mb-6">
+          <h2 className="text-lg font-semibold mb-4">리포트</h2>
+          <div className="grid gap-4 md:grid-cols-3 text-sm">
+            <div className="p-3 rounded-lg bg-gray-50 border">
+              <div className="text-gray-500">총 거리</div>
+              <div className="text-xl font-semibold">
+                {stats.totalDistance.toFixed(2)} km
+              </div>
+            </div>
+            <div className="p-3 rounded-lg bg-gray-50 border">
+              <div className="text-gray-500">총 러닝 횟수</div>
+              <div className="text-xl font-semibold">{stats.count} 회</div>
+            </div>
+            <div className="p-3 rounded-lg bg-gray-50 border">
+              <div className="text-gray-500">평균 페이스</div>
+              <div className="text-xl font-semibold">
+                {stats.avgPaceSec ? formatPaceValue(stats.avgPaceSec) : "-"}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 mt-6">
+            <div className="h-64">
+              <h3 className="font-semibold mb-2 text-sm text-gray-700">
+                거리 / 시간 추이 (최근 10회)
+              </h3>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis yAxisId="left" />
+                  <YAxis yAxisId="right" orientation="right" />
+                  <Tooltip />
+                  <Legend />
+                  <Bar yAxisId="left" dataKey="distance" name="거리(km)" fill="#6366f1" />
+                  <Bar yAxisId="right" dataKey="timeMin" name="시간(분)" fill="#22c55e" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="h-64">
+              <h3 className="font-semibold mb-2 text-sm text-gray-700">
+                페이스 추이 (최근 10회)
+              </h3>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => formatPaceValue(value)} />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="paceSec"
+                    name="페이스(초/km)"
+                    stroke="#f97316"
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
         <div className="bg-white p-5 rounded-2xl shadow-sm border">
           <h2 className="text-lg font-semibold mb-4">대결 시뮬레이션 (MVP)</h2>
 

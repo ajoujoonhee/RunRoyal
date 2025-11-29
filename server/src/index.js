@@ -5,6 +5,7 @@ import cors from "cors";
 import mongoose from "mongoose";
 import authRoutes from "./routes/auth.js";
 import runRoutes from "./routes/runs.js";
+import competitionRoutes from "./routes/competitions.js";
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.get("/health", (_, res) => res.send("OK"));
 // 라우트
 app.use("/api/auth", authRoutes);
 app.use("/api/runs", runRoutes);
+app.use("/api/competitions", competitionRoutes);
 
 // 서버 실행
 (async () => {

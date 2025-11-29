@@ -1,4 +1,4 @@
-// client/src/pages/Dashboard.jsx
+﻿// client/src/pages/Dashboard.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api, { setToken } from "../lib/api";
@@ -7,48 +7,70 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
-  const [distance, setDistance] = useState("");   // km
-  const [timeMin, setTimeMin] = useState("");     // 분
-  const [timeSecInput, setTimeSecInput] = useState(""); // 초
+  // 러닝 기록 입력
+  const [distance, setDistance] = useState("");
+  const [timeMin, setTimeMin] = useState("");
+  const [timeSecInput, setTimeSecInput] = useState("");
   const [runs, setRuns] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
+  const [runsLoading, setRunsLoading] = useState(false);
+  const [runErr, setRunErr] = useState("");
 
-  // 기록 목록 불러오기
+  // 대결 시뮬레이션 입력
+  const [compDistance, setCompDistance] = useState("");
+  const [compMin, setCompMin] = useState("");
+  const [compSec, setCompSec] = useState("");
+  const [competitions, setCompetitions] = useState([]);
+  const [compLoading, setCompLoading] = useState(false);
+  const [compErr, setCompErr] = useState("");
+
   const fetchRuns = async () => {
     try {
-      setLoading(true);
-      setErr("");
+      setRunsLoading(true);
+      setRunErr("");
       const { data } = await api.get("/api/runs");
       setRuns(data);
     } catch (e) {
       console.error(e);
-      setErr(e?.response?.data?.message || "러닝 기록 불러오기 오류");
+      setRunErr(e?.response?.data?.message || "러닝 기록 불러오기 오류");
     } finally {
-      setLoading(false);
+      setRunsLoading(false);
+    }
+  };
+
+  const fetchCompetitions = async () => {
+    try {
+      setCompLoading(true);
+      setCompErr("");
+      const { data } = await api.get("/api/competitions");
+      setCompetitions(data);
+    } catch (e) {
+      console.error(e);
+      setCompErr(e?.response?.data?.message || "대결 목록 불러오기 오류");
+    } finally {
+      setCompLoading(false);
     }
   };
 
   useEffect(() => {
     fetchRuns();
+    fetchCompetitions();
   }, []);
 
-  // 기록 업로드
-  const onSubmit = async (e) => {
+  const onSubmitRun = async (e) => {
     e.preventDefault();
     try {
-      setErr("");
+      setRunErr("");
 
       const d = Number(distance);
       const m = Number(timeMin);
       const s = Number(timeSecInput);
 
       if (!d || d <= 0 || m < 0 || s < 0 || (m === 0 && s === 0)) {
-        setErr("거리(km)와 시간(분/초)을 올바르게 입력해주세요.");
+        setRunErr("거리(km)와 시간(분/초)을 올바르게 입력해 주세요.");
         return;
       }
 
-      const totalSec = m * 60 + s; // ← 여기서만 초로 변환
+      const totalSec = m * 60 + s;
 
       await api.post("/api/runs", {
         distance: d,
@@ -61,17 +83,47 @@ export default function Dashboard() {
       fetchRuns();
     } catch (e) {
       console.error(e);
-      setErr(e?.response?.data?.message || "러닝 기록 저장 중 오류가 발생했습니다.");
+      setRunErr(e?.response?.data?.message || "러닝 기록 저장 실패가 발생했습니다.");
+    }
+  };
+
+  const onSubmitCompetition = async (e) => {
+    e.preventDefault();
+    try {
+      setCompErr("");
+
+      const d = Number(compDistance);
+      const m = Number(compMin);
+      const s = Number(compSec);
+
+      if (!d || d <= 0 || m < 0 || s < 0 || (m === 0 && s === 0)) {
+        setCompErr("거리(km)와 시간(분/초)을 올바르게 입력해 주세요.");
+        return;
+      }
+
+      const totalSec = m * 60 + s;
+
+      await api.post("/api/competitions", {
+        distance: d,
+        time: totalSec,
+      });
+
+      setCompDistance("");
+      setCompMin("");
+      setCompSec("");
+      fetchCompetitions();
+    } catch (e) {
+      console.error(e);
+      setCompErr(e?.response?.data?.message || "대결 생성 실패가 발생했습니다.");
     }
   };
 
   const handleLogout = () => {
-    setToken(null); // API 인스턴스의 토큰도 초기화
+    setToken(null);
     localStorage.clear();
     navigate("/login");
   };
 
-  // 초 → "분 XX초"
   const formatTime = (sec) => {
     if (!sec && sec !== 0) return "-";
     const m = Math.floor(sec / 60);
@@ -79,21 +131,25 @@ export default function Dashboard() {
     return `${m}분 ${s}초`;
   };
 
-  // pace(초/km) → "분 XX초 /km"
-  const formatPace = (time, distance) => {
-    if (!time || !distance) return "-";
-    const paceSecPerKm = time / distance;
+  const formatPace = (time, dist) => {
+    if (!time || !dist) return "-";
+    const paceSecPerKm = time / dist;
     const m = Math.floor(paceSecPerKm / 60);
     const s = Math.round(paceSecPerKm % 60);
-    return `${m}분 ${s}초 /km`;
+    return `${m}분 ${s}초/km`;
+  };
+
+  const resultLabel = {
+    win: "승리",
+    lose: "패배",
+    draw: "무승부",
   };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      {/* 상단 헤더 */}
       <div className="max-w-4xl mx-auto mb-8 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">
-          안녕하세요, {user?.nickname || "Runner"}님 👋
+          환영합니다 {user?.nickname || "Runner"}님
         </h1>
         <button
           className="text-sm text-gray-600 underline"
@@ -104,18 +160,17 @@ export default function Dashboard() {
       </div>
 
       <div className="max-w-4xl mx-auto grid gap-6 md:grid-cols-2">
-        {/* 왼쪽: 기록 업로드 폼 */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border">
-          <h2 className="text-lg font-semibold mb-4">🏃 러닝 기록 업로드</h2>
+          <h2 className="text-lg font-semibold mb-4">빠른 러닝 기록 입력</h2>
 
-          <form onSubmit={onSubmit} className="space-y-3">
+          <form onSubmit={onSubmitRun} className="space-y-3">
             <div>
               <label className="block text-sm mb-1">거리 (km)</label>
               <input
                 type="number"
                 step="0.01"
                 className="w-full border rounded px-3 py-2"
-                placeholder="예: 5"
+                placeholder="예) 5"
                 value={distance}
                 onChange={(e) => setDistance(e.target.value)}
               />
@@ -141,28 +196,27 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {err && <div className="text-red-500 text-sm">{err}</div>}
+            {runErr && <div className="text-red-500 text-sm">{runErr}</div>}
 
             <button
               type="submit"
               className="w-full bg-black text-white py-2 rounded mt-2 hover:bg-gray-900 transition"
             >
-              기록 저장
+              기록 추가
             </button>
           </form>
         </div>
 
-        {/* 오른쪽: 기록 리스트 */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border">
-          <h2 className="text-lg font-semibold mb-4">📚 내 러닝 기록</h2>
+          <h2 className="text-lg font-semibold mb-4">최근 러닝 기록</h2>
 
-          {loading && (
-            <div className="text-sm text-gray-500">불러오는 중...</div>
+          {runsLoading && (
+            <div className="text-sm text-gray-500">불러오는 중..</div>
           )}
 
-          {!loading && runs.length === 0 && (
+          {!runsLoading && runs.length === 0 && (
             <div className="text-sm text-gray-500">
-              아직 저장된 기록이 없습니다. 첫 기록을 업로드해보세요!
+              아직 저장된 기록이 없습니다. 먼저 기록을 추가해 보세요.
             </div>
           )}
 
@@ -191,6 +245,98 @@ export default function Dashboard() {
               </li>
             ))}
           </ul>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto mt-6">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border">
+          <h2 className="text-lg font-semibold mb-4">대결 시뮬레이션 (MVP)</h2>
+
+          <form onSubmit={onSubmitCompetition} className="space-y-3 mb-4">
+            <div className="grid gap-3 md:grid-cols-3">
+              <div>
+                <label className="block text-sm mb-1">거리 (km)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="w-full border rounded px-3 py-2"
+                  placeholder="예) 3"
+                  value={compDistance}
+                  onChange={(e) => setCompDistance(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">분</label>
+                <input
+                  type="number"
+                  className="w-full border rounded px-3 py-2"
+                  placeholder="분"
+                  value={compMin}
+                  onChange={(e) => setCompMin(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">초</label>
+                <input
+                  type="number"
+                  className="w-full border rounded px-3 py-2"
+                  placeholder="초"
+                  value={compSec}
+                  onChange={(e) => setCompSec(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {compErr && <div className="text-red-500 text-sm">{compErr}</div>}
+
+            <button
+              type="submit"
+              className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 transition"
+            >
+              대결 생성 & 결과 보기
+            </button>
+          </form>
+
+          <div className="border-t pt-4">
+            <h3 className="font-semibold mb-3">내 대결 목록</h3>
+
+            {compLoading && (
+              <div className="text-sm text-gray-500">불러오는 중..</div>
+            )}
+
+            {!compLoading && competitions.length === 0 && (
+              <div className="text-sm text-gray-500">
+                아직 생성된 대결이 없습니다. 기록을 입력하고 대결을 만들어 보세요.
+              </div>
+            )}
+
+            <ul className="space-y-2 max-h-80 overflow-y-auto">
+              {competitions.map((c) => (
+                <li
+                  key={c._id}
+                  className="border rounded-xl px-3 py-2 text-sm flex justify-between items-start"
+                >
+                  <div>
+                    <div className="font-medium">
+                      거리: {c.distance?.toFixed(2)} km
+                    </div>
+                    <div className="text-gray-700">
+                      내 기록: {formatTime(c.time)}
+                    </div>
+                    <div className="text-gray-700">
+                      상대 기록: {formatTime(c.opponentTime)}
+                    </div>
+                    <div className="text-gray-500 text-xs">
+                      결과: {resultLabel[c.result] || c.result}
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-400 text-right">
+                    {c.createdAt ? new Date(c.createdAt).toLocaleString() : "-"}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-// client/src/pages/RunCreate.jsx
+﻿// client/src/pages/RunCreate.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
@@ -6,11 +6,9 @@ import api from "../lib/api";
 export default function RunCreate() {
   const navigate = useNavigate();
 
-  const [distanceKm, setDistanceKm] = useState("");
+  const [distance, setDistance] = useState("");
   const [minutes, setMinutes] = useState("");
   const [seconds, setSeconds] = useState("");
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10)); // yyyy-mm-dd
-  const [memo, setMemo] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -18,12 +16,12 @@ export default function RunCreate() {
     e.preventDefault();
     setError("");
 
-    const d = parseFloat(distanceKm);
+    const d = parseFloat(distance);
     const min = parseInt(minutes || "0", 10);
     const sec = parseInt(seconds || "0", 10);
 
     if (!d || d <= 0) {
-      setError("거리는 0보다 큰 숫자로 입력해주세요.");
+      setError("거리가 0보다 커야 합니다.");
       return;
     }
     if (min < 0 || sec < 0 || sec >= 60) {
@@ -33,27 +31,25 @@ export default function RunCreate() {
 
     const timeSec = min * 60 + sec;
     if (timeSec <= 0) {
-      setError("총 시간은 0초보다 커야 합니다.");
+      setError("초 시간은 0초보다 크거나 같아야 합니다.");
       return;
     }
 
     const payload = {
-      distanceKm: d,
-      timeSec,
-      date,
-      memo,
+      distance: d,
+      time: timeSec,
     };
 
     try {
       setLoading(true);
       await api.post("/api/runs", payload);
-      alert("러닝 기록이 저장되었습니다!");
-      navigate("/"); // 대시보드로 이동 (원하면 /runs로 바꿔도 됨)
+      alert("달리기 기록이 저장되었습니다!");
+      navigate("/"); // 완료 후 메인으로 이동
     } catch (err) {
       console.error(err);
       setError(
         err?.response?.data?.message ||
-          "기록 저장 중 오류가 발생했습니다."
+          "기록 저장 실패가 발생했습니다."
       );
     } finally {
       setLoading(false);
@@ -63,13 +59,12 @@ export default function RunCreate() {
   return (
     <div className="min-h-screen bg-gray-50 flex justify-center px-4 py-10">
       <div className="w-full max-w-md bg-white rounded-2xl shadow p-6">
-        <h1 className="text-2xl font-bold mb-4">🏃 러닝 기록 업로드</h1>
+        <h1 className="text-2xl font-bold mb-4">달리기 기록 작성</h1>
         <p className="text-sm text-gray-500 mb-6">
-          오늘 뛴 거리와 시간을 입력하면 나중에 대결/분석에 사용됩니다.
+          거리와 시간을 입력하면 저장됩니다.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* 거리 */}
           <div>
             <label className="block text-sm font-medium mb-1">
               거리 (km)
@@ -78,17 +73,16 @@ export default function RunCreate() {
               type="number"
               step="0.01"
               min="0"
-              value={distanceKm}
-              onChange={(e) => setDistanceKm(e.target.value)}
+              value={distance}
+              onChange={(e) => setDistance(e.target.value)}
               className="w-full border rounded px-3 py-2 text-sm"
-              placeholder="예: 3.5"
+              placeholder="예) 3.5"
             />
           </div>
 
-          {/* 시간 */}
           <div>
             <label className="block text-sm font-medium mb-1">
-              시간 (분:초)
+              시간 (분/초)
             </label>
             <div className="flex gap-2">
               <input
@@ -111,33 +105,6 @@ export default function RunCreate() {
             </div>
           </div>
 
-          {/* 날짜 */}
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              날짜
-            </label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full border rounded px-3 py-2 text-sm"
-            />
-          </div>
-
-          {/* 메모 */}
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              메모 (선택)
-            </label>
-            <textarea
-              value={memo}
-              onChange={(e) => setMemo(e.target.value)}
-              rows={3}
-              className="w-full border rounded px-3 py-2 text-sm"
-              placeholder="코스, 컨디션 등 메모를 남겨보세요."
-            />
-          </div>
-
           {error && (
             <div className="text-sm text-red-500">
               {error}
@@ -154,7 +121,7 @@ export default function RunCreate() {
                 : "bg-black text-white hover:bg-gray-900",
             ].join(" ")}
           >
-            {loading ? "저장 중..." : "기록 저장하기"}
+            {loading ? "저장중.." : "기록 저장"}
           </button>
 
           <button
@@ -162,7 +129,7 @@ export default function RunCreate() {
             onClick={() => navigate(-1)}
             className="w-full mt-2 py-2 rounded border text-sm text-gray-600 hover:bg-gray-50"
           >
-            ← 뒤로가기
+            뒤로가기
           </button>
         </form>
       </div>

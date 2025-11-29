@@ -69,4 +69,22 @@ router.post("/", authMiddleware, async (req, res) => {
   }
 });
 
+// 대결 삭제
+router.delete("/:id", authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const comp = await Competition.findOne({ _id: id, userId: req.userId });
+
+    if (!comp) {
+      return res.status(404).json({ message: "대결을 찾을 수 없습니다." });
+    }
+
+    await Competition.deleteOne({ _id: id, userId: req.userId });
+    res.json({ message: "삭제되었습니다." });
+  } catch (err) {
+    console.error("DELETE /api/competitions/:id error", err);
+    res.status(500).json({ message: "대결 삭제 실패" });
+  }
+});
+
 export default router;

@@ -13,12 +13,14 @@ export default function Dashboard() {
   const [timeSecInput, setTimeSecInput] = useState("");
   const [runs, setRuns] = useState([]);
   const [runsLoading, setRunsLoading] = useState(false);
+  const [runsDeleting, setRunsDeleting] = useState({});
   const [runErr, setRunErr] = useState("");
 
   // 대결 시뮬레이션 입력
   const [difficulty, setDifficulty] = useState("beginner");
   const [competitions, setCompetitions] = useState([]);
   const [compLoading, setCompLoading] = useState(false);
+  const [compDeleting, setCompDeleting] = useState({});
   const [compErr, setCompErr] = useState("");
 
   const fetchRuns = async () => {
@@ -106,6 +108,42 @@ export default function Dashboard() {
     setToken(null);
     localStorage.clear();
     navigate("/login");
+  };
+
+  const deleteRun = async (id) => {
+    if (!window.confirm("이 기록을 삭제할까요?")) return;
+    try {
+      setRunsDeleting((prev) => ({ ...prev, [id]: true }));
+      await api.delete(`/api/runs/${id}`);
+      await fetchRuns();
+    } catch (e) {
+      console.error(e);
+      setRunErr(e?.response?.data?.message || "기록 삭제 실패");
+    } finally {
+      setRunsDeleting((prev) => {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      });
+    }
+  };
+
+  const deleteCompetition = async (id) => {
+    if (!window.confirm("이 대결을 삭제할까요?")) return;
+    try {
+      setCompDeleting((prev) => ({ ...prev, [id]: true }));
+      await api.delete(`/api/competitions/${id}`);
+      await fetchCompetitions();
+    } catch (e) {
+      console.error(e);
+      setCompErr(e?.response?.data?.message || "대결 삭제 실패");
+    } finally {
+      setCompDeleting((prev) => {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      });
+    }
   };
 
   const formatTime = (sec) => {
@@ -208,7 +246,7 @@ export default function Dashboard() {
             {runs.map((run) => (
               <li
                 key={run._id}
-                className="border rounded-xl px-3 py-2 text-sm flex justify-between"
+                className="border rounded-xl px-3 py-2 text-sm flex justify-between items-start gap-3"
               >
                 <div>
                   <div className="font-medium">
@@ -222,9 +260,14 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div className="text-xs text-gray-400 self-end">
-                  {run.createdAt
-                    ? new Date(run.createdAt).toLocaleString()
-                    : "-"}
+                  {run.createdAt ? new Date(run.createdAt).toLocaleString() : "-"}
+                  <button
+                    className="ml-2 text-red-500 underline text-[11px]"
+                    disabled={runsDeleting[run._id]}
+                    onClick={() => deleteRun(run._id)}
+                  >
+                    {runsDeleting[run._id] ? "삭제중..." : "삭제"}
+                  </button>
                 </div>
               </li>
             ))}
@@ -277,7 +320,7 @@ export default function Dashboard() {
               {competitions.map((c) => (
                 <li
                   key={c._id}
-                  className="border rounded-xl px-3 py-2 text-sm flex justify-between items-start"
+                  className="border rounded-xl px-3 py-2 text-sm flex justify-between items-start gap-3"
                 >
                   <div>
                     <div className="font-medium">
@@ -291,6 +334,13 @@ export default function Dashboard() {
                   </div>
                   <div className="text-xs text-gray-400 text-right">
                     {c.createdAt ? new Date(c.createdAt).toLocaleString() : "-"}
+                    <button
+                      className="ml-2 text-red-500 underline text-[11px]"
+                      disabled={compDeleting[c._id]}
+                      onClick={() => deleteCompetition(c._id)}
+                    >
+                      {compDeleting[c._id] ? "삭제중..." : "삭제"}
+                    </button>
                   </div>
                 </li>
               ))}

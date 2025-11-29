@@ -47,4 +47,22 @@ router.post("/", authMiddleware, async (req, res) => {
   }
 });
 
+// 러닝 기록 삭제
+router.delete("/:id", authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const run = await Run.findOne({ _id: id, userId: req.userId });
+
+    if (!run) {
+      return res.status(404).json({ message: "기록을 찾을 수 없습니다." });
+    }
+
+    await Run.deleteOne({ _id: id, userId: req.userId });
+    res.json({ message: "삭제되었습니다." });
+  } catch (err) {
+    console.error("DELETE /api/runs/:id error:", err);
+    res.status(500).json({ message: "기록 삭제 실패" });
+  }
+});
+
 export default router;

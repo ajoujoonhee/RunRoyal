@@ -30,6 +30,12 @@ const competitionSchema = new mongoose.Schema(
       enum: ["win", "lose", "draw"],
       required: true,
     },
+    difficulty: {
+      type: String,
+      enum: ["beginner", "intermediate", "advanced"],
+      default: "beginner",
+      required: true,
+    },
     status: {
       type: String,
       enum: ["completed"],

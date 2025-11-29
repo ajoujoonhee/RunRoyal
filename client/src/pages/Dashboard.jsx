@@ -16,9 +16,7 @@ export default function Dashboard() {
   const [runErr, setRunErr] = useState("");
 
   // 대결 시뮬레이션 입력
-  const [compDistance, setCompDistance] = useState("");
-  const [compMin, setCompMin] = useState("");
-  const [compSec, setCompSec] = useState("");
+  const [difficulty, setDifficulty] = useState("beginner");
   const [competitions, setCompetitions] = useState([]);
   const [compLoading, setCompLoading] = useState(false);
   const [compErr, setCompErr] = useState("");
@@ -92,25 +90,11 @@ export default function Dashboard() {
     try {
       setCompErr("");
 
-      const d = Number(compDistance);
-      const m = Number(compMin);
-      const s = Number(compSec);
-
-      if (!d || d <= 0 || m < 0 || s < 0 || (m === 0 && s === 0)) {
-        setCompErr("거리(km)와 시간(분/초)을 올바르게 입력해 주세요.");
-        return;
-      }
-
-      const totalSec = m * 60 + s;
-
       await api.post("/api/competitions", {
-        distance: d,
-        time: totalSec,
+        difficulty,
       });
 
-      setCompDistance("");
-      setCompMin("");
-      setCompSec("");
+      setDifficulty("beginner");
       fetchCompetitions();
     } catch (e) {
       console.error(e);
@@ -253,38 +237,17 @@ export default function Dashboard() {
           <h2 className="text-lg font-semibold mb-4">대결 시뮬레이션 (MVP)</h2>
 
           <form onSubmit={onSubmitCompetition} className="space-y-3 mb-4">
-            <div className="grid gap-3 md:grid-cols-3">
-              <div>
-                <label className="block text-sm mb-1">거리 (km)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  className="w-full border rounded px-3 py-2"
-                  placeholder="예) 3"
-                  value={compDistance}
-                  onChange={(e) => setCompDistance(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm mb-1">분</label>
-                <input
-                  type="number"
-                  className="w-full border rounded px-3 py-2"
-                  placeholder="분"
-                  value={compMin}
-                  onChange={(e) => setCompMin(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm mb-1">초</label>
-                <input
-                  type="number"
-                  className="w-full border rounded px-3 py-2"
-                  placeholder="초"
-                  value={compSec}
-                  onChange={(e) => setCompSec(e.target.value)}
-                />
-              </div>
+            <div>
+              <label className="block text-sm mb-1">봇 난이도</label>
+              <select
+                className="w-full border rounded px-3 py-2"
+                value={difficulty}
+                onChange={(e) => setDifficulty(e.target.value)}
+              >
+                <option value="beginner">초급 (7:00/km)</option>
+                <option value="intermediate">중급 (5:30/km)</option>
+                <option value="advanced">상급 (4:30/km)</option>
+              </select>
             </div>
 
             {compErr && <div className="text-red-500 text-sm">{compErr}</div>}
@@ -320,14 +283,10 @@ export default function Dashboard() {
                     <div className="font-medium">
                       거리: {c.distance?.toFixed(2)} km
                     </div>
-                    <div className="text-gray-700">
-                      내 기록: {formatTime(c.time)}
-                    </div>
-                    <div className="text-gray-700">
-                      상대 기록: {formatTime(c.opponentTime)}
-                    </div>
+                    <div className="text-gray-700">내 기록: {formatTime(c.time)}</div>
+                    <div className="text-gray-700">상대 기록: {formatTime(c.opponentTime)}</div>
                     <div className="text-gray-500 text-xs">
-                      결과: {resultLabel[c.result] || c.result}
+                      난이도: {c.difficulty || "-"} / 결과: {resultLabel[c.result] || c.result}
                     </div>
                   </div>
                   <div className="text-xs text-gray-400 text-right">

@@ -1,8 +1,10 @@
 // client/src/pages/Dashboard.jsx
 import { useEffect, useState } from "react";
-import api from "../lib/api";
+import { useNavigate } from "react-router-dom";
+import api, { setToken } from "../lib/api";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   const [distance, setDistance] = useState("");   // km
@@ -64,8 +66,9 @@ export default function Dashboard() {
   };
 
   const handleLogout = () => {
+    setToken(null); // API 인스턴스의 토큰도 초기화
     localStorage.clear();
-    location.href = "/login";
+    navigate("/login");
   };
 
   // 초 → "분 XX초"

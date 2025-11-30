@@ -22,24 +22,26 @@ const competitionSchema = new mongoose.Schema(
     // 봇/상대 기록(초)
     opponentTime: {
       type: Number,
-      required: true,
       min: 0,
+    },
+    opponentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
     result: {
       type: String,
-      enum: ["win", "lose", "draw"],
-      required: true,
+      enum: ["win", "lose", "draw", null],
+      default: null,
     },
     difficulty: {
       type: String,
-      enum: ["beginner", "intermediate", "advanced"],
-      default: "beginner",
-      required: true,
+      enum: ["beginner", "intermediate", "advanced", null],
+      default: null,
     },
     status: {
       type: String,
-      enum: ["completed"],
-      default: "completed",
+      enum: ["pending", "completed"],
+      default: "pending",
       required: true,
     },
   },

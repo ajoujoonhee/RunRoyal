@@ -35,6 +35,8 @@ export default function Dashboard() {
   const [compLoading, setCompLoading] = useState(false);
   const [compDeleting, setCompDeleting] = useState({});
   const [compErr, setCompErr] = useState("");
+  const [openComps, setOpenComps] = useState([]);
+  const [openLoading, setOpenLoading] = useState(false);
   // 리더보드
   const [leaderboard, setLeaderboard] = useState([]);
   const [lbLoading, setLbLoading] = useState(false);
@@ -68,6 +70,18 @@ export default function Dashboard() {
     }
   };
 
+  const fetchOpenCompetitions = async () => {
+    try {
+      setOpenLoading(true);
+      const { data } = await api.get("/api/competitions/open");
+      setOpenComps(data || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setOpenLoading(false);
+    }
+  };
+
   const fetchLeaderboard = async () => {
     try {
       setLbLoading(true);
@@ -86,6 +100,7 @@ export default function Dashboard() {
     fetchRuns();
     fetchCompetitions();
     fetchLeaderboard();
+    fetchOpenCompetitions();
 
     // Socket.io 연결 (리더보드 실시간 갱신)
     const socketUrl =
@@ -98,12 +113,15 @@ export default function Dashboard() {
       withCredentials: false,
     });
 
-    socket.on("leaderboard:update", () => {
-      fetchLeaderboard();
+    socket.on("leaderboard:update", fetchLeaderboard);
+    socket.on("competition:update", () => {
+      fetchCompetitions();
+      fetchOpenCompetitions();
     });
 
     return () => {
       socket.off("leaderboard:update");
+      socket.off("competition:update");
       socket.close();
     };
   }, []);
@@ -150,9 +168,37 @@ export default function Dashboard() {
 
       setDifficulty("beginner");
       fetchCompetitions();
+      fetchLeaderboard();
     } catch (e) {
       console.error(e);
       setCompErr(e?.response?.data?.message || "대결 생성 실패가 발생했습니다.");
+    }
+  };
+
+  const createUserCompetition = async () => {
+    try {
+      setCompErr("");
+      await api.post("/api/competitions/user");
+      fetchCompetitions();
+      fetchOpenCompetitions();
+      fetchLeaderboard();
+    } catch (e) {
+      console.error(e);
+      setCompErr(e?.response?.data?.message || "유저 대결 생성 실패");
+    }
+  };
+
+  const acceptCompetition = async (id) => {
+    if (!window.confirm("이 대결에 참여할까요?")) return;
+    try {
+      setCompErr("");
+      await api.post(`/api/competitions/${id}/accept`);
+      fetchCompetitions();
+      fetchOpenCompetitions();
+      fetchLeaderboard();
+    } catch (e) {
+      console.error(e);
+      setCompErr(e?.response?.data?.message || "대결 수락 실패");
     }
   };
 
@@ -478,7 +524,7 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-white p-5 rounded-2xl shadow-sm border">
-          <h2 className="text-lg font-semibold mb-4">대결 시뮬레이션 (MVP)</h2>
+          <h2 className="text-lg font-semibold mb-4">대결 시뮬레이션 / 유저 대결</h2>
 
           <form onSubmit={onSubmitCompetition} className="space-y-3 mb-4">
             <div>
@@ -500,9 +546,58 @@ export default function Dashboard() {
               type="submit"
               className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 transition"
             >
-              대결 생성 & 결과 보기
+              봇 대결 생성 & 결과 보기
             </button>
           </form>
+
+          <div className="border-t pt-4 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-sm text-gray-700">유저 대결 만들기</h3>
+              <button
+                onClick={createUserCompetition}
+                className="text-sm bg-gray-900 text-white px-3 py-1 rounded hover:bg-gray-800"
+              >
+                최신 기록으로 대결 생성
+              </button>
+            </div>
+            <p className="text-xs text-gray-500">
+              상대가 참여하면 내 기록과 상대 기록 페이스를 동일 거리로 환산해 승패를 결정합니다.
+            </p>
+          </div>
+
+          <div className="border-t pt-4 mb-4">
+            <h3 className="font-semibold mb-2 text-sm text-gray-700">참여 가능한 오픈 대결</h3>
+            {openLoading && <div className="text-sm text-gray-500">불러오는 중..</div>}
+            {!openLoading && openComps.length === 0 && (
+              <div className="text-sm text-gray-500">참여 가능한 대결이 없습니다.</div>
+            )}
+            {!openLoading && openComps.length > 0 && (
+              <ul className="space-y-2 max-h-56 overflow-y-auto">
+                {openComps.map((c) => (
+                  <li
+                    key={c._id}
+                    className="border rounded-lg px-3 py-2 text-sm flex justify-between items-start gap-3"
+                  >
+                    <div>
+                      <div className="font-medium">
+                        거리: {c.distance?.toFixed(2)} km
+                      </div>
+                      <div className="text-gray-700">요청자: {c.userId?.nickname || "?"}</div>
+                      <div className="text-xs text-gray-500">
+                        생성: {c.createdAt ? new Date(c.createdAt).toLocaleString() : "-"}
+                      </div>
+                    </div>
+                    <button
+                      className="text-xs bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"
+                      onClick={() => acceptCompetition(c._id)}
+                    >
+                      참여
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
           <div className="border-t pt-4">
             <h3 className="font-semibold mb-3">내 대결 목록</h3>

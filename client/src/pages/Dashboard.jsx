@@ -272,6 +272,12 @@ export default function Dashboard() {
     return `${m}분 ${s}초/km`;
   };
 
+  const flipResultForOpponent = (result) => {
+    if (result === "win") return "lose";
+    if (result === "lose") return "win";
+    return result;
+  };
+
   const chartData = useMemo(() => {
     return [...runs]
       .reverse()
@@ -618,16 +624,39 @@ export default function Dashboard() {
                   key={c._id}
                   className="border rounded-xl px-3 py-2 text-sm flex justify-between items-start gap-3"
                 >
-                  <div>
-                    <div className="font-medium">
-                      거리: {c.distance?.toFixed(2)} km
-                    </div>
-                    <div className="text-gray-700">내 기록: {formatTime(c.time)}</div>
-                    <div className="text-gray-700">상대 기록: {formatTime(c.opponentTime)}</div>
-                    <div className="text-gray-500 text-xs">
-                      난이도: {c.difficulty || "-"} / 결과: {resultLabel[c.result] || c.result}
-                    </div>
-                  </div>
+                  {(() => {
+                    const currentUserId = user?.id;
+                    const isOwner = c.userId === currentUserId || c.userId?._id === currentUserId;
+                    const myTime = isOwner ? c.time : c.opponentTime;
+                    const oppTime = isOwner ? c.opponentTime : c.time;
+                    const rawResult = c.result;
+                    const displayResult = isOwner
+                      ? rawResult
+                      : flipResultForOpponent(rawResult);
+                    const challengerName = c.userId?.nickname || c.userId?.email || "요청자";
+                    const opponentName = c.opponentId?.nickname || c.opponentId?.email || "참가자";
+
+                    return (
+                      <div>
+                        <div className="font-medium">
+                          거리: {c.distance?.toFixed(2)} km
+                        </div>
+                        <div className="text-gray-700">
+                          내 기록: {myTime ? formatTime(myTime) : "-"}
+                        </div>
+                        <div className="text-gray-700">
+                          상대 기록: {oppTime ? formatTime(oppTime) : "-"}
+                        </div>
+                        <div className="text-gray-500 text-xs">
+                          요청자: {challengerName}
+                          {c.opponentId && ` / 상대: ${opponentName}`}
+                        </div>
+                        <div className="text-gray-500 text-xs">
+                          난이도: {c.difficulty || "-"} / 결과: {resultLabel[displayResult] || displayResult || "-"}
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <div className="text-xs text-gray-400 text-right">
                     {c.createdAt ? new Date(c.createdAt).toLocaleString() : "-"}
                     <button

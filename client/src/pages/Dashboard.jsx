@@ -13,6 +13,7 @@ import {
   BarChart,
   Bar,
 } from "recharts";
+import { io } from "socket.io-client";
 import api, { setToken } from "../lib/api";
 
 export default function Dashboard() {
@@ -34,6 +35,10 @@ export default function Dashboard() {
   const [compLoading, setCompLoading] = useState(false);
   const [compDeleting, setCompDeleting] = useState({});
   const [compErr, setCompErr] = useState("");
+  // 리더보드
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [lbLoading, setLbLoading] = useState(false);
+  const [lbErr, setLbErr] = useState("");
 
   const fetchRuns = async () => {
     try {
@@ -63,9 +68,44 @@ export default function Dashboard() {
     }
   };
 
+  const fetchLeaderboard = async () => {
+    try {
+      setLbLoading(true);
+      setLbErr("");
+      const { data } = await api.get("/api/leaderboard/weekly");
+      setLeaderboard(data?.rows || []);
+    } catch (e) {
+      console.error(e);
+      setLbErr(e?.response?.data?.message || "리더보드 불러오기 오류");
+    } finally {
+      setLbLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchRuns();
     fetchCompetitions();
+    fetchLeaderboard();
+
+    // Socket.io 연결 (리더보드 실시간 갱신)
+    const socketUrl =
+      (import.meta.env.VITE_SOCKET_URL ||
+        (import.meta.env.VITE_API_URL || "").replace(/\/api$/, "")) ||
+      "http://localhost:4000";
+
+    const socket = io(socketUrl, {
+      transports: ["websocket"],
+      withCredentials: false,
+    });
+
+    socket.on("leaderboard:update", () => {
+      fetchLeaderboard();
+    });
+
+    return () => {
+      socket.off("leaderboard:update");
+      socket.close();
+    };
   }, []);
 
   const onSubmitRun = async (e) => {
@@ -396,6 +436,45 @@ export default function Dashboard() {
               </ResponsiveContainer>
             </div>
           </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-2xl shadow-sm border mb-6">
+          <h2 className="text-lg font-semibold mb-4">주간 리더보드 (최근 7일)</h2>
+          {lbErr && <div className="text-red-500 text-sm mb-2">{lbErr}</div>}
+          {lbLoading && <div className="text-sm text-gray-500">불러오는 중...</div>}
+          {!lbLoading && leaderboard.length === 0 && (
+            <div className="text-sm text-gray-500">
+              아직 리더보드에 표시할 기록이 없습니다. 러닝을 추가해 보세요.
+            </div>
+          )}
+          {!lbLoading && leaderboard.length > 0 && (
+            <ul className="divide-y">
+              {leaderboard.map((row, idx) => (
+                <li key={row.userId || idx} className="py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="w-7 h-7 rounded-full bg-gray-900 text-white text-sm flex items-center justify-center">
+                      {idx + 1}
+                    </span>
+                    <div>
+                      <div className="font-semibold text-sm">{row.nickname || "Runner"}</div>
+                      <div className="text-xs text-gray-500">
+                        횟수 {row.count || 0}회 · 평균 페이스{" "}
+                        {row.avgPaceSec ? formatPaceValue(row.avgPaceSec) : "-"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-semibold">
+                      {row.totalDistance?.toFixed(2)} km
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      총 시간 {formatTime(row.totalTime)}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="bg-white p-5 rounded-2xl shadow-sm border">

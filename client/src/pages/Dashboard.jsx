@@ -196,7 +196,7 @@ export default function Dashboard() {
             ? new Date(run.createdAt).toLocaleDateString()
             : `#${arr.length - idx}`,
           distance: run.distance,
-          timeMin: run.time ? run.time / 60 : 0,
+          timeSec: run.time || 0,
           paceSec,
         };
       })
@@ -351,11 +351,25 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis yAxisId="left" />
-                  <YAxis yAxisId="right" orientation="right" />
-                  <Tooltip />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    tickFormatter={(v) => formatTime(v)}
+                  />
+                  <Tooltip
+                    formatter={(value, name) => {
+                      if (name === "시간(초)") return [formatTime(value), "시간"];
+                      return [value, name];
+                    }}
+                  />
                   <Legend />
                   <Bar yAxisId="left" dataKey="distance" name="거리(km)" fill="#6366f1" />
-                  <Bar yAxisId="right" dataKey="timeMin" name="시간(분)" fill="#22c55e" />
+                  <Bar
+                    yAxisId="right"
+                    dataKey="timeSec"
+                    name="시간(초)"
+                    fill="#22c55e"
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>

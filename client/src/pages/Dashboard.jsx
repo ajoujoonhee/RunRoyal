@@ -445,7 +445,7 @@ export default function Dashboard() {
           <h2 className="text-lg font-semibold mb-4">리포트</h2>
 
           <div className="grid gap-6 md:grid-cols-2 mt-6">
-            <div className="h-64">
+            <div className="h-56 md:h-64">
               <h3 className="font-semibold mb-2 text-sm text-gray-700">거리 / 시간 추이 (최근 10회)</h3>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
@@ -466,7 +466,7 @@ export default function Dashboard() {
               </ResponsiveContainer>
             </div>
 
-            <div className="h-64">
+            <div className="h-56 md:h-64">
               <h3 className="font-semibold mb-2 text-sm text-gray-700">페이스 추이 (최근 10회)</h3>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
@@ -494,7 +494,18 @@ export default function Dashboard() {
               {leaderboard.map((row, idx) => (
                 <li key={row.userId || idx} className="py-3 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="w-7 h-7 rounded-full bg-gray-900 text-white text-sm flex items-center justify-center">
+                    <span
+                      className={[
+                        "w-8 h-8 rounded-full text-white text-sm flex items-center justify-center font-semibold",
+                        idx === 0
+                          ? "bg-amber-500"
+                          : idx === 1
+                          ? "bg-slate-700"
+                          : idx === 2
+                          ? "bg-orange-400"
+                          : "bg-gray-900",
+                      ].join(" ")}
+                    >
                       {idx + 1}
                     </span>
                     <div>
@@ -622,6 +633,11 @@ export default function Dashboard() {
                       </div>
                       <div className="text-gray-500 text-xs">
                         난이도: {c.difficulty || "-"} / 결과: {resultLabel[displayResult] || displayResult || "-"}
+                        {c.status === "pending" ? (
+                          <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">대기</span>
+                        ) : (
+                          <span className="ml-2 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">완료</span>
+                        )}
                       </div>
                     </div>
                     <div className="text-xs text-gray-400 text-right">

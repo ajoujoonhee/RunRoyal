@@ -37,15 +37,16 @@ body {
 
 @keyframes dash {
   from {
-    transform: translateX(0);
+    left: 0;
   }
   to {
-    transform: translateX(calc(100% - 2rem));
+    left: calc(100% - 2.5rem);
   }
 }
 
 .runner-anim {
   animation: dash 6s linear forwards;
+  position: absolute;
 }
 
 .runner-anim.delay {

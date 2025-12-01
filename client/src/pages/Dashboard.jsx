@@ -663,11 +663,11 @@ export default function Dashboard() {
             <div className="mt-6 space-y-3">
               <div className="relative h-10 w-full bg-slate-100 rounded-full overflow-hidden">
                 <div className="absolute inset-1 rounded-full bg-white shadow-inner" />
-                <div className="absolute top-1 left-1 w-8 h-8 bg-indigo-500 rounded-full runner-anim" />
+                <div className="absolute top-1 w-8 h-8 bg-indigo-500 rounded-full runner-anim" />
               </div>
               <div className="relative h-10 w-full bg-slate-100 rounded-full overflow-hidden">
                 <div className="absolute inset-1 rounded-full bg-white shadow-inner" />
-                <div className="absolute top-1 left-1 w-8 h-8 bg-orange-500 rounded-full runner-anim delay" />
+                <div className="absolute top-1 w-8 h-8 bg-orange-500 rounded-full runner-anim delay" />
               </div>
             </div>
             <div className="mt-4 text-xs text-gray-500">잠시 후 결과가 업데이트됩니다...</div>

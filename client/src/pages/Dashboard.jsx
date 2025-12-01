@@ -29,7 +29,7 @@ export default function Dashboard() {
   const [runsDeleting, setRunsDeleting] = useState({});
   const [runErr, setRunErr] = useState("");
 
-  // 대결 시뮬레이션 입력
+  // 대결 관련 상태
   const [difficulty, setDifficulty] = useState("beginner");
   const [competitions, setCompetitions] = useState([]);
   const [compLoading, setCompLoading] = useState(false);
@@ -37,10 +37,14 @@ export default function Dashboard() {
   const [compErr, setCompErr] = useState("");
   const [openComps, setOpenComps] = useState([]);
   const [openLoading, setOpenLoading] = useState(false);
+
   // 리더보드
   const [leaderboard, setLeaderboard] = useState([]);
   const [lbLoading, setLbLoading] = useState(false);
   const [lbErr, setLbErr] = useState("");
+
+  // 대결 애니메이션 오버레이
+  const [raceOverlay, setRaceOverlay] = useState({ show: false, title: "", subtitle: "" });
 
   const fetchRuns = async () => {
     try {
@@ -140,10 +144,7 @@ export default function Dashboard() {
 
       const totalSec = m * 60 + s;
 
-      await api.post("/api/runs", {
-        distance: d,
-        time: totalSec,
-      });
+      await api.post("/api/runs", { distance: d, time: totalSec });
 
       setDistance("");
       setTimeMin("");
@@ -155,21 +156,28 @@ export default function Dashboard() {
     }
   };
 
+  const startRaceOverlay = (title) => {
+    setRaceOverlay({ show: true, title, subtitle: "결과를 계산하고 있습니다..." });
+    setTimeout(() => {
+      fetchCompetitions();
+      fetchLeaderboard();
+      setRaceOverlay({ show: false, title: "", subtitle: "" });
+    }, 6500);
+  };
+
   const onSubmitCompetition = async (e) => {
     e.preventDefault();
     try {
       setCompErr("");
-
-      await api.post("/api/competitions", {
-        difficulty,
-      });
-
+      await api.post("/api/competitions", { difficulty });
       setDifficulty("beginner");
       fetchCompetitions();
       fetchLeaderboard();
+      startRaceOverlay("봇 대결 진행 중");
     } catch (e) {
       console.error(e);
       setCompErr(e?.response?.data?.message || "대결 생성 실패가 발생했습니다.");
+      setRaceOverlay({ show: false, title: "", subtitle: "" });
     }
   };
 
@@ -194,9 +202,11 @@ export default function Dashboard() {
       fetchCompetitions();
       fetchOpenCompetitions();
       fetchLeaderboard();
+      startRaceOverlay("대결 진행 중");
     } catch (e) {
       console.error(e);
       setCompErr(e?.response?.data?.message || "대결 수락 실패");
+      setRaceOverlay({ show: false, title: "", subtitle: "" });
     }
   };
 
@@ -306,12 +316,8 @@ export default function Dashboard() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <div className="text-sm uppercase tracking-[0.2em] opacity-80">RunRoyale · Dashboard</div>
-              <h1 className="text-3xl md:text-4xl font-bold mt-2">
-                환영합니다, {user?.nickname || "Runner"}님
-              </h1>
-              <p className="text-white/80 text-sm mt-2">
-                기록을 쌓고, 대결을 만들고, 리더보드에서 순위를 확인하세요.
-              </p>
+              <h1 className="text-3xl md:text-4xl font-bold mt-2">환영합니다, {user?.nickname || "Runner"}님</h1>
+              <p className="text-white/80 text-sm mt-2">기록을 쌓고, 대결을 만들고, 리더보드에서 순위를 확인하세요.</p>
             </div>
             <div className="flex items-center gap-3">
               <button
@@ -345,9 +351,7 @@ export default function Dashboard() {
             </div>
             <div className="bg-white/10 rounded-2xl p-4 border border-white/20 backdrop-blur">
               <div className="text-white/70">평균 페이스</div>
-              <div className="text-2xl font-semibold">
-                {stats.avgPaceSec ? formatPaceValue(stats.avgPaceSec) : "-"}
-              </div>
+              <div className="text-2xl font-semibold">{stats.avgPaceSec ? formatPaceValue(stats.avgPaceSec) : "-"}</div>
             </div>
           </div>
         </div>
@@ -356,9 +360,7 @@ export default function Dashboard() {
           <div className="bg-white/90 backdrop-blur p-5 rounded-2xl shadow-md border border-slate-200">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">빠른 러닝 기록 입력</h2>
-              <span className="text-[11px] px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 font-semibold">
-                NEW
-              </span>
+              <span className="text-[11px] px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 font-semibold">NEW</span>
             </div>
 
             <form onSubmit={onSubmitRun} className="space-y-3">
@@ -562,9 +564,7 @@ export default function Dashboard() {
           <div className="border-t pt-4 mb-4">
             <h3 className="font-semibold mb-2 text-sm text-gray-700">참여 가능한 오픈 대결</h3>
             {openLoading && <div className="text-sm text-gray-500">불러오는 중..</div>}
-            {!openLoading && openComps.length === 0 && (
-              <div className="text-sm text-gray-500">참여 가능한 대결이 없습니다.</div>
-            )}
+            {!openLoading && openComps.length === 0 && <div className="text-sm text-gray-500">참여 가능한 대결이 없습니다.</div>}
             {!openLoading && openComps.length > 0 && (
               <ul className="space-y-2 max-h-56 overflow-y-auto">
                 {openComps.map((c) => (
@@ -575,9 +575,7 @@ export default function Dashboard() {
                     <div>
                       <div className="font-medium">거리: {c.distance?.toFixed(2)} km</div>
                       <div className="text-gray-700">요청자: {c.userId?.nickname || "?"}</div>
-                      <div className="text-xs text-gray-500">
-                        생성: {c.createdAt ? new Date(c.createdAt).toLocaleString() : "-"}
-                      </div>
+                      <div className="text-xs text-gray-500">생성: {c.createdAt ? new Date(c.createdAt).toLocaleString() : "-"}</div>
                     </div>
                     <button
                       className="text-xs bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"
@@ -597,9 +595,7 @@ export default function Dashboard() {
             {compLoading && <div className="text-sm text-gray-500">불러오는 중..</div>}
 
             {!compLoading && competitions.length === 0 && (
-              <div className="text-sm text-gray-500">
-                아직 생성된 대결이 없습니다. 기록을 입력하고 대결을 만들어 보세요.
-              </div>
+              <div className="text-sm text-gray-500">아직 생성된 대결이 없습니다. 기록을 입력하고 대결을 만들어 보세요.</div>
             )}
 
             <ul className="space-y-2 max-h-80 overflow-y-auto">
@@ -657,6 +653,27 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {raceOverlay.show && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center px-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 relative overflow-hidden">
+            <div className="text-sm text-gray-500">대결 시뮬레이션</div>
+            <div className="text-2xl font-bold text-gray-900 mt-1">{raceOverlay.title}</div>
+            <div className="text-gray-600 text-sm mt-1">{raceOverlay.subtitle}</div>
+            <div className="mt-6 space-y-3">
+              <div className="relative h-10 bg-slate-100 rounded-full overflow-hidden">
+                <div className="absolute inset-1 rounded-full bg-white shadow-inner" />
+                <div className="absolute top-1 left-1 w-8 h-8 bg-indigo-500 rounded-full runner-anim" />
+              </div>
+              <div className="relative h-10 bg-slate-100 rounded-full overflow-hidden">
+                <div className="absolute inset-1 rounded-full bg-white shadow-inner" />
+                <div className="absolute top-1 left-1 w-8 h-8 bg-orange-500 rounded-full runner-anim delay" />
+              </div>
+            </div>
+            <div className="mt-4 text-xs text-gray-500">잠시 후 결과가 업데이트됩니다...</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

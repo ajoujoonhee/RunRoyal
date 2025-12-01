@@ -34,3 +34,20 @@ body {
   min-width: 320px;
   min-height: 100vh;
 }
+
+@keyframes dash {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(100% - 1.75rem));
+  }
+}
+
+.runner-anim {
+  animation: dash 1.2s linear infinite;
+}
+
+.runner-anim.delay {
+  animation-delay: 0.3s;
+}

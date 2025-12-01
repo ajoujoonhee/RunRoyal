@@ -45,7 +45,19 @@ router.get("/weekly", authMiddleware, async (_req, res) => {
           },
         },
       },
-      { $sort: { totalDistance: -1 } },
+      {
+        $addFields: {
+          paceSecPerKm: {
+            $cond: [
+              { $gt: ["$totalDistance", 0] },
+              { $divide: ["$totalTime", "$totalDistance"] },
+              null,
+            ],
+          },
+        },
+      },
+      // 우선 거리 내림차순, 거리 같으면 페이스 오름차순(빠른 순)
+      { $sort: { totalDistance: -1, paceSecPerKm: 1 } },
       { $limit: 10 },
     ]);
 

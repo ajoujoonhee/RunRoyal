@@ -10,7 +10,7 @@ router.get("/weekly", authMiddleware, async (_req, res) => {
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const rows = await Run.aggregate([
+    const basePipeline = [
       { $match: { createdAt: { $gte: sevenDaysAgo } } },
       {
         $group: {
@@ -56,12 +56,34 @@ router.get("/weekly", authMiddleware, async (_req, res) => {
           },
         },
       },
-      // 우선 거리 내림차순, 거리 같으면 페이스 오름차순(빠른 순)
+      {
+        $setWindowFields: {
+          sortBy: { totalDistance: -1, paceSecPerKm: 1 },
+          output: {
+            rank: { $rank: {} },
+          },
+        },
+      },
+    ];
+
+    const rows = await Run.aggregate([
+      ...basePipeline,
       { $sort: { totalDistance: -1, paceSecPerKm: 1 } },
       { $limit: 10 },
     ]);
 
-    res.json({ range: "7d", generatedAt: now, rows });
+    const myRow = await Run.aggregate([
+      ...basePipeline,
+      { $match: { _id: _req.userId } },
+    ]);
+
+    res.json({
+      range: "7d",
+      generatedAt: now,
+      rows,
+      myRank: myRow?.[0]?.rank || null,
+      myStats: myRow?.[0] || null,
+    });
   } catch (err) {
     console.error("GET /api/leaderboard/weekly error", err);
     res.status(500).json({ message: "리더보드 조회 실패" });

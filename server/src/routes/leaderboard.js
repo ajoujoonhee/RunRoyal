@@ -1,14 +1,16 @@
 ﻿// server/src/routes/leaderboard.js
 import express from "express";
+import mongoose from "mongoose";
 import { authMiddleware } from "../middlewares/auth.js";
 import Run from "../models/Run.js";
 
 const router = express.Router();
 
-router.get("/weekly", authMiddleware, async (_req, res) => {
+router.get("/weekly", authMiddleware, async (req, res) => {
   try {
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const userObjectId = new mongoose.Types.ObjectId(req.userId);
 
     const basePipeline = [
       { $match: { createdAt: { $gte: sevenDaysAgo } } },
@@ -56,33 +58,27 @@ router.get("/weekly", authMiddleware, async (_req, res) => {
           },
         },
       },
-      {
-        $setWindowFields: {
-          sortBy: { totalDistance: -1, paceSecPerKm: 1 },
-          output: {
-            rank: { $rank: {} },
-          },
-        },
-      },
+      // 정렬 우선순위: 거리 내림차순, 페이스 오름차순(빠른 순)
+      { $sort: { totalDistance: -1, paceSecPerKm: 1 } },
     ];
 
-    const rows = await Run.aggregate([
-      ...basePipeline,
-      { $sort: { totalDistance: -1, paceSecPerKm: 1 } },
-      { $limit: 10 },
-    ]);
+    const allRows = await Run.aggregate(basePipeline);
+    const rows = allRows.slice(0, 10);
 
-    const myRow = await Run.aggregate([
-      ...basePipeline,
-      { $match: { _id: _req.userId } },
-    ]);
+    let myRank = null;
+    let myStats = null;
+    const idx = allRows.findIndex((r) => r.userId?.toString() === userObjectId.toString());
+    if (idx >= 0) {
+      myRank = idx + 1;
+      myStats = allRows[idx];
+    }
 
     res.json({
       range: "7d",
       generatedAt: now,
       rows,
-      myRank: myRow?.[0]?.rank || null,
-      myStats: myRow?.[0] || null,
+      myRank,
+      myStats,
     });
   } catch (err) {
     console.error("GET /api/leaderboard/weekly error", err);

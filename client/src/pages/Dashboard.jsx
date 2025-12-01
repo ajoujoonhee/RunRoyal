@@ -44,7 +44,13 @@ export default function Dashboard() {
   const [lbErr, setLbErr] = useState("");
 
   // 대결 애니메이션 오버레이
-  const [raceOverlay, setRaceOverlay] = useState({ show: false, title: "", subtitle: "" });
+  const [raceOverlay, setRaceOverlay] = useState({
+    show: false,
+    title: "",
+    subtitle: "",
+    durMe: 6,
+    durVs: 6.4,
+  });
 
   const fetchRuns = async () => {
     try {
@@ -156,12 +162,30 @@ export default function Dashboard() {
     }
   };
 
-  const startRaceOverlay = (title) => {
-    setRaceOverlay({ show: true, title, subtitle: "결과를 계산하고 있습니다..." });
+  const buildRaceDurations = (myTime, oppTime) => {
+    const fallback = { durMe: 6, durVs: 6.4 };
+    if (!myTime || !oppTime || myTime <= 0 || oppTime <= 0) return fallback;
+    const maxDur = 6;
+    const minDur = 2.8;
+    const slow = Math.max(myTime, oppTime);
+    const fast = Math.min(myTime, oppTime);
+    const slowDur = maxDur;
+    const fastDur = Math.max(minDur, (fast / slow) * maxDur);
+
+    if (myTime >= oppTime) {
+      // 내가 느림 → ME가 오래 달림
+      return { durMe: slowDur, durVs: fastDur };
+    }
+    return { durMe: fastDur, durVs: slowDur };
+  };
+
+  const startRaceOverlay = (title, myTime, oppTime) => {
+    const { durMe, durVs } = buildRaceDurations(myTime, oppTime);
+    setRaceOverlay({ show: true, title, subtitle: "결과를 계산하고 있습니다...", durMe, durVs });
     setTimeout(() => {
       fetchCompetitions();
       fetchLeaderboard();
-      setRaceOverlay({ show: false, title: "", subtitle: "" });
+      setRaceOverlay({ show: false, title: "", subtitle: "", durMe: 6, durVs: 6.4 });
     }, 6500);
   };
 
@@ -169,15 +193,16 @@ export default function Dashboard() {
     e.preventDefault();
     try {
       setCompErr("");
-      await api.post("/api/competitions", { difficulty });
+      const res = await api.post("/api/competitions", { difficulty });
       setDifficulty("beginner");
       fetchCompetitions();
       fetchLeaderboard();
-      startRaceOverlay("봇 대결 진행 중");
+      const comp = res?.data;
+      startRaceOverlay("봇 대결 진행 중", comp?.time, comp?.opponentTime);
     } catch (e) {
       console.error(e);
       setCompErr(e?.response?.data?.message || "대결 생성 실패가 발생했습니다.");
-      setRaceOverlay({ show: false, title: "", subtitle: "" });
+      setRaceOverlay({ show: false, title: "", subtitle: "", durMe: 6, durVs: 6.4 });
     }
   };
 
@@ -198,15 +223,21 @@ export default function Dashboard() {
     if (!window.confirm("이 대결에 참여할까요?")) return;
     try {
       setCompErr("");
-      await api.post(`/api/competitions/${id}/accept`);
+      const res = await api.post(`/api/competitions/${id}/accept`);
       fetchCompetitions();
       fetchOpenCompetitions();
       fetchLeaderboard();
-      startRaceOverlay("대결 진행 중");
+      const comp = res?.data;
+      const currentUserId = user?.id;
+      const ownerId = typeof comp?.userId === "object" ? comp?.userId?._id : comp?.userId;
+      const isOwner = ownerId === currentUserId;
+      const myTime = isOwner ? comp?.time : comp?.opponentTime;
+      const oppTime = isOwner ? comp?.opponentTime : comp?.time;
+      startRaceOverlay("대결 진행 중", myTime, oppTime);
     } catch (e) {
       console.error(e);
       setCompErr(e?.response?.data?.message || "대결 수락 실패");
-      setRaceOverlay({ show: false, title: "", subtitle: "" });
+      setRaceOverlay({ show: false, title: "", subtitle: "", durMe: 6, durVs: 6.4 });
     }
   };
 

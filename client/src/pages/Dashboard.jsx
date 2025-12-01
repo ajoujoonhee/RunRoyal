@@ -304,22 +304,66 @@ export default function Dashboard() {
   }, [runs]);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto mb-8 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">
-          환영합니다 {user?.nickname || "Runner"}님
-        </h1>
-        <button
-          className="text-sm text-gray-600 underline"
-          onClick={handleLogout}
-        >
-          로그아웃
-        </button>
-      </div>
+    <div className="min-h-screen px-4 py-8">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="rounded-3xl bg-gradient-to-r from-indigo-600 via-purple-600 to-orange-500 text-white p-8 shadow-xl">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <div className="text-sm uppercase tracking-[0.2em] opacity-80">RunRoyale · Dashboard</div>
+              <h1 className="text-3xl md:text-4xl font-bold mt-2">
+                환영합니다, {user?.nickname || "Runner"}님
+              </h1>
+              <p className="text-white/80 text-sm mt-2">
+                기록을 쌓고, 대결을 만들고, 리더보드에서 순위를 확인하세요.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate("/runs/new")}
+                className="px-4 py-2 rounded-full bg-white text-indigo-700 font-semibold shadow-sm hover:translate-y-[-1px] transition"
+              >
+                기록 작성
+              </button>
+              <button
+                onClick={createUserCompetition}
+                className="px-4 py-2 rounded-full border border-white/60 text-white hover:bg-white/10 transition"
+              >
+                대결 만들기
+              </button>
+              <button
+                className="px-3 py-2 rounded-full text-sm bg-white/10 border border-white/30 hover:bg-white/20 transition"
+                onClick={handleLogout}
+              >
+                로그아웃
+              </button>
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-4 mt-6 text-sm">
+            <div className="bg-white/10 rounded-2xl p-4 border border-white/20 backdrop-blur">
+              <div className="text-white/70">총 거리</div>
+              <div className="text-2xl font-semibold">{stats.totalDistance.toFixed(2)} km</div>
+            </div>
+            <div className="bg-white/10 rounded-2xl p-4 border border-white/20 backdrop-blur">
+              <div className="text-white/70">총 러닝 횟수</div>
+              <div className="text-2xl font-semibold">{stats.count} 회</div>
+            </div>
+            <div className="bg-white/10 rounded-2xl p-4 border border-white/20 backdrop-blur">
+              <div className="text-white/70">평균 페이스</div>
+              <div className="text-2xl font-semibold">
+                {stats.avgPaceSec ? formatPaceValue(stats.avgPaceSec) : "-"}
+              </div>
+            </div>
+          </div>
+        </div>
 
-      <div className="max-w-4xl mx-auto grid gap-6 md:grid-cols-2">
-        <div className="bg-white p-5 rounded-2xl shadow-sm border">
-          <h2 className="text-lg font-semibold mb-4">빠른 러닝 기록 입력</h2>
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="bg-white/90 backdrop-blur p-5 rounded-2xl shadow-md border border-slate-200">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">빠른 러닝 기록 입력</h2>
+              <span className="text-[11px] px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 font-semibold">
+                NEW
+              </span>
+            </div>
 
           <form onSubmit={onSubmitRun} className="space-y-3">
             <div>
@@ -358,14 +402,14 @@ export default function Dashboard() {
 
             <button
               type="submit"
-              className="w-full bg-black text-white py-2 rounded mt-2 hover:bg-gray-900 transition"
+              className="w-full bg-indigo-600 text-white py-2 rounded mt-2 hover:bg-indigo-700 transition font-semibold shadow-sm"
             >
               기록 추가
             </button>
           </form>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl shadow-sm border">
+        <div className="bg-white/90 backdrop-blur p-5 rounded-2xl shadow-md border border-slate-200">
           <h2 className="text-lg font-semibold mb-4">최근 러닝 기록</h2>
 
           {runsLoading && (
@@ -382,7 +426,7 @@ export default function Dashboard() {
             {runs.map((run) => (
               <li
                 key={run._id}
-                className="border rounded-xl px-3 py-2 text-sm flex justify-between items-start gap-3"
+                className="border border-slate-200 rounded-xl px-3 py-2 text-sm flex justify-between items-start gap-3 hover:border-indigo-200 transition"
               >
                 <div>
                   <div className="font-medium">
@@ -411,27 +455,9 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto mt-6">
-        <div className="bg-white p-5 rounded-2xl shadow-sm border mb-6">
+      <div className="max-w-6xl mx-auto mt-6 space-y-6">
+        <div className="bg-white/90 backdrop-blur p-5 rounded-2xl shadow-md border border-slate-200">
           <h2 className="text-lg font-semibold mb-4">리포트</h2>
-          <div className="grid gap-4 md:grid-cols-3 text-sm">
-            <div className="p-3 rounded-lg bg-gray-50 border">
-              <div className="text-gray-500">총 거리</div>
-              <div className="text-xl font-semibold">
-                {stats.totalDistance.toFixed(2)} km
-              </div>
-            </div>
-            <div className="p-3 rounded-lg bg-gray-50 border">
-              <div className="text-gray-500">총 러닝 횟수</div>
-              <div className="text-xl font-semibold">{stats.count} 회</div>
-            </div>
-            <div className="p-3 rounded-lg bg-gray-50 border">
-              <div className="text-gray-500">평균 페이스</div>
-              <div className="text-xl font-semibold">
-                {stats.avgPaceSec ? formatPaceValue(stats.avgPaceSec) : "-"}
-              </div>
-            </div>
-          </div>
 
           <div className="grid gap-6 md:grid-cols-2 mt-6">
             <div className="h-64">
@@ -490,7 +516,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl shadow-sm border mb-6">
+        <div className="bg-white/90 backdrop-blur p-5 rounded-2xl shadow-md border border-slate-200">
           <h2 className="text-lg font-semibold mb-4">주간 리더보드 (최근 7일)</h2>
           {lbErr && <div className="text-red-500 text-sm mb-2">{lbErr}</div>}
           {lbLoading && <div className="text-sm text-gray-500">불러오는 중...</div>}
@@ -529,7 +555,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="bg-white p-5 rounded-2xl shadow-sm border">
+        <div className="bg-white/90 backdrop-blur p-5 rounded-2xl shadow-md border border-slate-200">
           <h2 className="text-lg font-semibold mb-4">대결 시뮬레이션 / 유저 대결</h2>
 
           <form onSubmit={onSubmitCompetition} className="space-y-3 mb-4">

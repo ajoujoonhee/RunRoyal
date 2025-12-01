@@ -102,10 +102,8 @@ export default function Dashboard() {
     fetchLeaderboard();
     fetchOpenCompetitions();
 
-    // Socket.io 연결 (리더보드 실시간 갱신)
     const socketUrl =
-      (import.meta.env.VITE_SOCKET_URL ||
-        (import.meta.env.VITE_API_URL || "").replace(/\/api$/, "")) ||
+      (import.meta.env.VITE_SOCKET_URL || (import.meta.env.VITE_API_URL || "").replace(/\/api$/, "")) ||
       "http://localhost:4000";
 
     const socket = io(socketUrl, {
@@ -248,7 +246,7 @@ export default function Dashboard() {
     if (!sec && sec !== 0) return "-";
     const m = Math.floor(sec / 60);
     const s = sec % 60;
-    return `${m}분 ${s}초`;
+    return `${m}m ${s}s`;
   };
 
   const formatPace = (time, dist) => {
@@ -256,7 +254,7 @@ export default function Dashboard() {
     const paceSecPerKm = time / dist;
     const m = Math.floor(paceSecPerKm / 60);
     const s = Math.round(paceSecPerKm % 60);
-    return `${m}분 ${s}초/km`;
+    return `${m}m ${s}s/km`;
   };
 
   const resultLabel = {
@@ -269,7 +267,7 @@ export default function Dashboard() {
     if (!sec && sec !== 0) return "-";
     const m = Math.floor(sec / 60);
     const s = Math.round(sec % 60);
-    return `${m}분 ${s}초/km`;
+    return `${m}m ${s}s/km`;
   };
 
   const flipResultForOpponent = (result) => {
@@ -284,15 +282,13 @@ export default function Dashboard() {
       .map((run, idx, arr) => {
         const paceSec = run.time && run.distance ? run.time / run.distance : null;
         return {
-          name: run.createdAt
-            ? new Date(run.createdAt).toLocaleDateString()
-            : `#${arr.length - idx}`,
+          name: run.createdAt ? new Date(run.createdAt).toLocaleDateString() : `#${arr.length - idx}`,
           distance: run.distance,
           timeSec: run.time || 0,
           paceSec,
         };
       })
-      .slice(-10); // 최근 10개만 차트
+      .slice(-10);
   }, [runs]);
 
   const stats = useMemo(() => {
@@ -365,115 +361,98 @@ export default function Dashboard() {
               </span>
             </div>
 
-          <form onSubmit={onSubmitRun} className="space-y-3">
-            <div>
-              <label className="block text-sm mb-1">거리 (km)</label>
-              <input
-                type="number"
-                step="0.01"
-                className="w-full border rounded px-3 py-2"
-                placeholder="예) 5"
-                value={distance}
-                onChange={(e) => setDistance(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm mb-1">시간</label>
-              <div className="flex gap-2">
+            <form onSubmit={onSubmitRun} className="space-y-3">
+              <div>
+                <label className="block text-sm mb-1">거리 (km)</label>
                 <input
                   type="number"
-                  className="w-1/2 border rounded px-3 py-2"
-                  placeholder="분"
-                  value={timeMin}
-                  onChange={(e) => setTimeMin(e.target.value)}
-                />
-                <input
-                  type="number"
-                  className="w-1/2 border rounded px-3 py-2"
-                  placeholder="초"
-                  value={timeSecInput}
-                  onChange={(e) => setTimeSecInput(e.target.value)}
+                  step="0.01"
+                  className="w-full border rounded px-3 py-2"
+                  placeholder="예) 5"
+                  value={distance}
+                  onChange={(e) => setDistance(e.target.value)}
                 />
               </div>
-            </div>
 
-            {runErr && <div className="text-red-500 text-sm">{runErr}</div>}
+              <div>
+                <label className="block text-sm mb-1">시간</label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    className="w-1/2 border rounded px-3 py-2"
+                    placeholder="분"
+                    value={timeMin}
+                    onChange={(e) => setTimeMin(e.target.value)}
+                  />
+                  <input
+                    type="number"
+                    className="w-1/2 border rounded px-3 py-2"
+                    placeholder="초"
+                    value={timeSecInput}
+                    onChange={(e) => setTimeSecInput(e.target.value)}
+                  />
+                </div>
+              </div>
 
-            <button
-              type="submit"
-              className="w-full bg-indigo-600 text-white py-2 rounded mt-2 hover:bg-indigo-700 transition font-semibold shadow-sm"
-            >
-              기록 추가
-            </button>
-          </form>
-        </div>
+              {runErr && <div className="text-red-500 text-sm">{runErr}</div>}
 
-        <div className="bg-white/90 backdrop-blur p-5 rounded-2xl shadow-md border border-slate-200">
-          <h2 className="text-lg font-semibold mb-4">최근 러닝 기록</h2>
-
-          {runsLoading && (
-            <div className="text-sm text-gray-500">불러오는 중..</div>
-          )}
-
-          {!runsLoading && runs.length === 0 && (
-            <div className="text-sm text-gray-500">
-              아직 저장된 기록이 없습니다. 먼저 기록을 추가해 보세요.
-            </div>
-          )}
-
-          <ul className="space-y-2 max-h-80 overflow-y-auto">
-            {runs.map((run) => (
-              <li
-                key={run._id}
-                className="border border-slate-200 rounded-xl px-3 py-2 text-sm flex justify-between items-start gap-3 hover:border-indigo-200 transition"
+              <button
+                type="submit"
+                className="w-full bg-indigo-600 text-white py-2 rounded mt-2 hover:bg-indigo-700 transition font-semibold shadow-sm"
               >
-                <div>
-                  <div className="font-medium">
-                    거리: {run.distance?.toFixed(2)} km
-                  </div>
-                  <div className="text-gray-600">
-                    시간: {formatTime(run.time)}
-                  </div>
-                  <div className="text-gray-500 text-xs">
-                    페이스: {formatPace(run.time, run.distance)}
-                  </div>
-                </div>
-                <div className="text-xs text-gray-400 self-end">
-                  {run.createdAt ? new Date(run.createdAt).toLocaleString() : "-"}
-                  <button
-                    className="ml-2 text-red-500 underline text-[11px]"
-                    disabled={runsDeleting[run._id]}
-                    onClick={() => deleteRun(run._id)}
-                  >
-                    {runsDeleting[run._id] ? "삭제중..." : "삭제"}
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+                기록 추가
+              </button>
+            </form>
+          </div>
 
-      <div className="max-w-6xl mx-auto mt-6 space-y-6">
+          <div className="bg-white/90 backdrop-blur p-5 rounded-2xl shadow-md border border-slate-200">
+            <h2 className="text-lg font-semibold mb-4">최근 러닝 기록</h2>
+
+            {runsLoading && <div className="text-sm text-gray-500">불러오는 중..</div>}
+
+            {!runsLoading && runs.length === 0 && (
+              <div className="text-sm text-gray-500">아직 저장된 기록이 없습니다. 먼저 기록을 추가해 보세요.</div>
+            )}
+
+            <ul className="space-y-2 max-h-80 overflow-y-auto">
+              {runs.map((run) => (
+                <li
+                  key={run._id}
+                  className="border border-slate-200 rounded-xl px-3 py-2 text-sm flex justify-between items-start gap-3 hover:border-indigo-200 transition"
+                >
+                  <div>
+                    <div className="font-medium">거리: {run.distance?.toFixed(2)} km</div>
+                    <div className="text-gray-600">시간: {formatTime(run.time)}</div>
+                    <div className="text-gray-500 text-xs">페이스: {formatPace(run.time, run.distance)}</div>
+                  </div>
+                  <div className="text-xs text-gray-400 self-end">
+                    {run.createdAt ? new Date(run.createdAt).toLocaleString() : "-"}
+                    <button
+                      className="ml-2 text-red-500 underline text-[11px]"
+                      disabled={runsDeleting[run._id]}
+                      onClick={() => deleteRun(run._id)}
+                    >
+                      {runsDeleting[run._id] ? "삭제중..." : "삭제"}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
         <div className="bg-white/90 backdrop-blur p-5 rounded-2xl shadow-md border border-slate-200">
           <h2 className="text-lg font-semibold mb-4">리포트</h2>
 
           <div className="grid gap-6 md:grid-cols-2 mt-6">
             <div className="h-64">
-              <h3 className="font-semibold mb-2 text-sm text-gray-700">
-                거리 / 시간 추이 (최근 10회)
-              </h3>
+              <h3 className="font-semibold mb-2 text-sm text-gray-700">거리 / 시간 추이 (최근 10회)</h3>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis yAxisId="left" />
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    tickFormatter={(v) => formatTime(v)}
-                  />
+                  <YAxis yAxisId="right" orientation="right" tickFormatter={(v) => formatTime(v)} />
                   <Tooltip
                     formatter={(value, name) => {
                       if (name === "시간(초)") return [formatTime(value), "시간"];
@@ -482,20 +461,13 @@ export default function Dashboard() {
                   />
                   <Legend />
                   <Bar yAxisId="left" dataKey="distance" name="거리(km)" fill="#6366f1" />
-                  <Bar
-                    yAxisId="right"
-                    dataKey="timeSec"
-                    name="시간(초)"
-                    fill="#22c55e"
-                  />
+                  <Bar yAxisId="right" dataKey="timeSec" name="시간(초)" fill="#22c55e" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
 
             <div className="h-64">
-              <h3 className="font-semibold mb-2 text-sm text-gray-700">
-                페이스 추이 (최근 10회)
-              </h3>
+              <h3 className="font-semibold mb-2 text-sm text-gray-700">페이스 추이 (최근 10회)</h3>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -503,13 +475,7 @@ export default function Dashboard() {
                   <YAxis />
                   <Tooltip formatter={(value) => formatPaceValue(value)} />
                   <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="paceSec"
-                    name="페이스(초/km)"
-                    stroke="#f97316"
-                    dot={false}
-                  />
+                  <Line type="monotone" dataKey="paceSec" name="페이스(초/km)" stroke="#f97316" dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -521,9 +487,7 @@ export default function Dashboard() {
           {lbErr && <div className="text-red-500 text-sm mb-2">{lbErr}</div>}
           {lbLoading && <div className="text-sm text-gray-500">불러오는 중...</div>}
           {!lbLoading && leaderboard.length === 0 && (
-            <div className="text-sm text-gray-500">
-              아직 리더보드에 표시할 기록이 없습니다. 러닝을 추가해 보세요.
-            </div>
+            <div className="text-sm text-gray-500">아직 리더보드에 표시할 기록이 없습니다. 러닝을 추가해 보세요.</div>
           )}
           {!lbLoading && leaderboard.length > 0 && (
             <ul className="divide-y">
@@ -536,18 +500,13 @@ export default function Dashboard() {
                     <div>
                       <div className="font-semibold text-sm">{row.nickname || "Runner"}</div>
                       <div className="text-xs text-gray-500">
-                        횟수 {row.count || 0}회 · 평균 페이스{" "}
-                        {row.avgPaceSec ? formatPaceValue(row.avgPaceSec) : "-"}
+                        횟수 {row.count || 0}회 · 평균 페이스 {row.avgPaceSec ? formatPaceValue(row.avgPaceSec) : "-"}
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-semibold">
-                      {row.totalDistance?.toFixed(2)} km
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      총 시간 {formatTime(row.totalTime)}
-                    </div>
+                    <div className="text-sm font-semibold">{row.totalDistance?.toFixed(2)} km</div>
+                    <div className="text-xs text-gray-500">총 시간 {formatTime(row.totalTime)}</div>
                   </div>
                 </li>
               ))}
@@ -611,9 +570,7 @@ export default function Dashboard() {
                     className="border rounded-lg px-3 py-2 text-sm flex justify-between items-start gap-3"
                   >
                     <div>
-                      <div className="font-medium">
-                        거리: {c.distance?.toFixed(2)} km
-                      </div>
+                      <div className="font-medium">거리: {c.distance?.toFixed(2)} km</div>
                       <div className="text-gray-700">요청자: {c.userId?.nickname || "?"}</div>
                       <div className="text-xs text-gray-500">
                         생성: {c.createdAt ? new Date(c.createdAt).toLocaleString() : "-"}
@@ -634,9 +591,7 @@ export default function Dashboard() {
           <div className="border-t pt-4">
             <h3 className="font-semibold mb-3">내 대결 목록</h3>
 
-            {compLoading && (
-              <div className="text-sm text-gray-500">불러오는 중..</div>
-            )}
+            {compLoading && <div className="text-sm text-gray-500">불러오는 중..</div>}
 
             {!compLoading && competitions.length === 0 && (
               <div className="text-sm text-gray-500">
@@ -645,56 +600,50 @@ export default function Dashboard() {
             )}
 
             <ul className="space-y-2 max-h-80 overflow-y-auto">
-              {competitions.map((c) => (
-                <li
-                  key={c._id}
-                  className="border rounded-xl px-3 py-2 text-sm flex justify-between items-start gap-3"
-                >
-                  {(() => {
-                    const currentUserId = user?.id;
-                    const isOwner = c.userId === currentUserId || c.userId?._id === currentUserId;
-                    const myTime = isOwner ? c.time : c.opponentTime;
-                    const oppTime = isOwner ? c.opponentTime : c.time;
-                    const rawResult = c.result;
-                    const displayResult = isOwner
-                      ? rawResult
-                      : flipResultForOpponent(rawResult);
-                    const challengerName = c.userId?.nickname || c.userId?.email || "요청자";
-                    const opponentName = c.opponentId?.nickname || c.opponentId?.email || "참가자";
+              {competitions.map((c) => {
+                const currentUserId = user?.id;
+                const ownerId = typeof c.userId === "object" ? c.userId?._id : c.userId;
+                const opponentId = typeof c.opponentId === "object" ? c.opponentId?._id : c.opponentId;
+                const isOwner = ownerId === currentUserId;
+                const myTime = isOwner ? c.time : c.opponentTime;
+                const oppTime = isOwner ? c.opponentTime : c.time;
+                const rawResult = c.result;
+                const displayResult = isOwner ? rawResult : flipResultForOpponent(rawResult);
+                const challengerName =
+                  (typeof c.userId === "object" && (c.userId?.nickname || c.userId?.email)) || "요청자";
+                const opponentName =
+                  (typeof c.opponentId === "object" && (c.opponentId?.nickname || c.opponentId?.email)) || "참가자";
 
-                    return (
-                      <div>
-                        <div className="font-medium">
-                          거리: {c.distance?.toFixed(2)} km
-                        </div>
-                        <div className="text-gray-700">
-                          내 기록: {myTime ? formatTime(myTime) : "-"}
-                        </div>
-                        <div className="text-gray-700">
-                          상대 기록: {oppTime ? formatTime(oppTime) : "-"}
-                        </div>
-                        <div className="text-gray-500 text-xs">
-                          요청자: {challengerName}
-                          {c.opponentId && ` / 상대: ${opponentName}`}
-                        </div>
-                        <div className="text-gray-500 text-xs">
-                          난이도: {c.difficulty || "-"} / 결과: {resultLabel[displayResult] || displayResult || "-"}
-                        </div>
+                return (
+                  <li
+                    key={c._id}
+                    className="border rounded-xl px-3 py-2 text-sm flex justify-between items-start gap-3"
+                  >
+                    <div>
+                      <div className="font-medium">거리: {c.distance?.toFixed(2)} km</div>
+                      <div className="text-gray-700">내 기록: {myTime ? formatTime(myTime) : "-"}</div>
+                      <div className="text-gray-700">상대 기록: {oppTime ? formatTime(oppTime) : "-"}</div>
+                      <div className="text-gray-500 text-xs">
+                        요청자: {challengerName}
+                        {opponentId && ` / 상대: ${opponentName}`}
                       </div>
-                    );
-                  })()}
-                  <div className="text-xs text-gray-400 text-right">
-                    {c.createdAt ? new Date(c.createdAt).toLocaleString() : "-"}
-                    <button
-                      className="ml-2 text-red-500 underline text-[11px]"
-                      disabled={compDeleting[c._id]}
-                      onClick={() => deleteCompetition(c._id)}
-                    >
-                      {compDeleting[c._id] ? "삭제중..." : "삭제"}
-                    </button>
-                  </div>
-                </li>
-              ))}
+                      <div className="text-gray-500 text-xs">
+                        난이도: {c.difficulty || "-"} / 결과: {resultLabel[displayResult] || displayResult || "-"}
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-400 text-right">
+                      {c.createdAt ? new Date(c.createdAt).toLocaleString() : "-"}
+                      <button
+                        className="ml-2 text-red-500 underline text-[11px]"
+                        disabled={compDeleting[c._id]}
+                        onClick={() => deleteCompetition(c._id)}
+                      >
+                        {compDeleting[c._id] ? "삭제중..." : "삭제"}
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>

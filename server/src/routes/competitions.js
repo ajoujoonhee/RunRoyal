@@ -32,7 +32,7 @@ router.get("/", authMiddleware, async (req, res) => {
     const list = await Competition.find({
       $or: [{ userId: req.userId }, { opponentId: req.userId }],
     })
-      .sort({ createdAt: -1 })
+      .sort({ updatedAt: -1 })
       .populate("userId", "nickname")
       .populate("opponentId", "nickname")
       .lean();

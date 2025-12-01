@@ -40,14 +40,14 @@ body {
     transform: translateX(0);
   }
   to {
-    transform: translateX(calc(100% - 1.75rem));
+    transform: translateX(calc(100% - 2rem));
   }
 }
 
 .runner-anim {
-  animation: dash 1.2s linear infinite;
+  animation: dash 6s linear forwards;
 }
 
 .runner-anim.delay {
-  animation-delay: 0.3s;
+  animation-duration: 6.4s;
 }

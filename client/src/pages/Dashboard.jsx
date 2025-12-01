@@ -661,11 +661,11 @@ export default function Dashboard() {
             <div className="text-2xl font-bold text-gray-900 mt-1">{raceOverlay.title}</div>
             <div className="text-gray-600 text-sm mt-1">{raceOverlay.subtitle}</div>
             <div className="mt-6 space-y-3">
-              <div className="relative h-10 bg-slate-100 rounded-full overflow-hidden">
+              <div className="relative h-10 w-full bg-slate-100 rounded-full overflow-hidden">
                 <div className="absolute inset-1 rounded-full bg-white shadow-inner" />
                 <div className="absolute top-1 left-1 w-8 h-8 bg-indigo-500 rounded-full runner-anim" />
               </div>
-              <div className="relative h-10 bg-slate-100 rounded-full overflow-hidden">
+              <div className="relative h-10 w-full bg-slate-100 rounded-full overflow-hidden">
                 <div className="absolute inset-1 rounded-full bg-white shadow-inner" />
                 <div className="absolute top-1 left-1 w-8 h-8 bg-orange-500 rounded-full runner-anim delay" />
               </div>

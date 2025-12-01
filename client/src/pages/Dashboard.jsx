@@ -542,17 +542,9 @@ export default function Dashboard() {
           </form>
 
           <div className="border-t pt-4 mb-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-sm text-gray-700">유저 대결 만들기</h3>
-              <button
-                onClick={createUserCompetition}
-                className="text-sm bg-gray-900 text-white px-3 py-1 rounded hover:bg-gray-800"
-              >
-                최신 기록으로 대결 생성
-              </button>
-            </div>
+            <h3 className="font-semibold text-sm text-gray-700 mb-2">유저 대결 안내</h3>
             <p className="text-xs text-gray-500">
-              상대가 참여하면 내 기록과 상대 기록 페이스를 동일 거리로 환산해 승패를 결정합니다.
+              상단 히어로 영역의 "대결 만들기"를 누르면 최신 기록으로 오픈 대결이 생성됩니다. 상대가 참여하면 두 사람의 페이스를 동일 거리로 환산해 승패를 결정합니다.
             </p>
           </div>
 

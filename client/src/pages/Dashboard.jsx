@@ -694,13 +694,19 @@ export default function Dashboard() {
             <div className="mt-6 space-y-3">
               <div className="relative h-10 w-full bg-slate-100 rounded-full overflow-hidden">
                 <div className="absolute inset-1 rounded-full bg-white shadow-inner" />
-                <div className="absolute top-1 w-8 h-8 bg-orange-500 rounded-full runner-anim text-[10px] text-white font-semibold flex items-center justify-center">
+                <div
+                  className="absolute top-1 w-8 h-8 bg-orange-500 rounded-full runner-anim text-[10px] text-white font-semibold flex items-center justify-center"
+                  style={{ animationDuration: `${raceOverlay.durVs || 6}s` }}
+                >
                   VS
                 </div>
               </div>
               <div className="relative h-10 w-full bg-slate-100 rounded-full overflow-hidden">
                 <div className="absolute inset-1 rounded-full bg-white shadow-inner" />
-                <div className="absolute top-1 w-8 h-8 bg-indigo-500 rounded-full runner-anim delay text-[10px] text-white font-semibold flex items-center justify-center">
+                <div
+                  className="absolute top-1 w-8 h-8 bg-indigo-500 rounded-full runner-anim text-[10px] text-white font-semibold flex items-center justify-center"
+                  style={{ animationDuration: `${raceOverlay.durMe || 6}s` }}
+                >
                   ME
                 </div>
               </div>

@@ -605,6 +605,7 @@ export default function Dashboard() {
                   (typeof c.userId === "object" && (c.userId?.nickname || c.userId?.email)) || "요청자";
                 const opponentName =
                   (typeof c.opponentId === "object" && (c.opponentId?.nickname || c.opponentId?.email)) || "참가자";
+                const completedAt = c.status === "completed" && c.updatedAt ? c.updatedAt : c.createdAt;
 
                 return (
                   <li
@@ -624,7 +625,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <div className="text-xs text-gray-400 text-right">
-                      {c.createdAt ? new Date(c.createdAt).toLocaleString() : "-"}
+                      {completedAt ? new Date(completedAt).toLocaleString() : "-"}
                       <button
                         className="ml-2 text-red-500 underline text-[11px]"
                         disabled={compDeleting[c._id]}

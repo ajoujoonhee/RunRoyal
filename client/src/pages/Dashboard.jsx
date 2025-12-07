@@ -44,6 +44,7 @@ export default function Dashboard() {
   const [lbErr, setLbErr] = useState("");
   const [myRank, setMyRank] = useState(null);
   const [myStats, setMyStats] = useState(null);
+  const [compTab, setCompTab] = useState("bot"); // bot | user
 
   // 대결 애니메이션 오버레이
   const [raceOverlay, setRaceOverlay] = useState({
@@ -669,82 +670,129 @@ export default function Dashboard() {
             <span className="text-[11px] px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 font-semibold">Live</span>
           </div>
 
-          <form onSubmit={onSubmitCompetition} className="space-y-3 mb-4">
-            <div>
-              <label className="block text-sm mb-1">봇 난이도</label>
-              <select
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-200"
-                value={difficulty}
-                onChange={(e) => setDifficulty(e.target.value)}
-              >
-                <option value="beginner">초급 (7:00/km)</option>
-                <option value="intermediate">중급 (5:30/km)</option>
-                <option value="advanced">상급 (4:30/km)</option>
-              </select>
-              <p className="text-[11px] text-gray-500 mt-1">최신 러닝 기록을 기준으로 봇과 대결합니다.</p>
-            </div>
-
-            {compErr && <div className="text-red-500 text-sm">{compErr}</div>}
-
+          <div className="flex gap-2 text-sm mb-4">
             <button
-              type="submit"
-              className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition font-semibold shadow-sm"
+              type="button"
+              onClick={() => setCompTab("bot")}
+              className={[
+                "flex-1 rounded-lg border px-3 py-2",
+                compTab === "bot" ? "border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold" : "border-slate-200",
+              ].join(" ")}
             >
-              봇 대결 생성 & 결과 보기
+              봇 대결
             </button>
-          </form>
-
-          <div className="border-t pt-4 mb-4">
-            <h3 className="font-semibold text-sm text-gray-700 mb-2">유저 대결 안내</h3>
-            <p className="text-xs text-gray-500">
-              상단 히어로 영역의 "대결 만들기"를 누르면 최신 기록으로 오픈 대결이 생성됩니다. 상대가 참여하면 두 사람의 페이스를 동일 거리로 환산해 승패를 결정합니다.
-            </p>
+            <button
+              type="button"
+              onClick={() => setCompTab("user")}
+              className={[
+                "flex-1 rounded-lg border px-3 py-2",
+                compTab === "user" ? "border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold" : "border-slate-200",
+              ].join(" ")}
+            >
+              유저 대결
+            </button>
           </div>
 
-          <div className="border-t pt-4 mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-sm text-gray-700">참여 가능한 오픈 대결</h3>
-              <span className="text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-700">
-                {openComps.length}개
-              </span>
-            </div>
-            {openLoading && (
-              <ul className="space-y-2">
-                {[1, 2].map((i) => (
-                  <li key={i} className="h-16 skeleton" />
-                ))}
-              </ul>
-            )}
-            {!openLoading && openComps.length === 0 && (
-              <div className="text-sm text-gray-500 bg-slate-50 border border-dashed border-slate-200 rounded-xl p-4">
-                참여 가능한 대결이 없습니다. 조금 뒤에 다시 확인해 보세요.
-              </div>
-            )}
-            {!openLoading && openComps.length > 0 && (
-              <ul className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                {openComps.map((c) => (
-                  <li
-                    key={c._id}
-                    className="border rounded-lg px-3 py-2 text-sm flex justify-between items-start gap-3 hover:border-indigo-200 transition"
+          {compTab === "bot" && (
+            <>
+              <form onSubmit={onSubmitCompetition} className="space-y-3 mb-4">
+                <div>
+                  <label className="block text-sm mb-1">봇 난이도</label>
+                  <select
+                    className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-200"
+                    value={difficulty}
+                    onChange={(e) => setDifficulty(e.target.value)}
                   >
-                    <div>
-                      <div className="font-medium">거리: {c.distance?.toFixed(2)} km</div>
-                      <div className="text-gray-700">요청자: {c.userId?.nickname || "?"}</div>
-                      <div className="text-xs text-gray-500">
-                        생성: {c.createdAt ? new Date(c.createdAt).toLocaleString() : "-"}
-                      </div>
-                    </div>
-                    <button
-                      className="text-xs bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"
-                      onClick={() => acceptCompetition(c._id)}
-                    >
-                      참여
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+                    <option value="beginner">초급 (7:00/km)</option>
+                    <option value="intermediate">중급 (5:30/km)</option>
+                    <option value="advanced">상급 (4:30/km)</option>
+                  </select>
+                  <p className="text-[11px] text-gray-500 mt-1">최신 러닝 기록을 기준으로 봇과 대결합니다.</p>
+                </div>
+
+                {compErr && <div className="text-red-500 text-sm">{compErr}</div>}
+
+                <button
+                  type="submit"
+                  className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition font-semibold shadow-sm"
+                >
+                  봇 대결 생성 & 결과 보기
+                </button>
+              </form>
+
+              <div className="border-t pt-4 mb-2">
+                <h3 className="font-semibold text-sm text-gray-700 mb-2">진행 방식</h3>
+                <p className="text-xs text-gray-500">
+                  내 최신 기록 거리/시간으로 봇 기록을 계산해 즉시 결과를 보여줍니다. 결과는 대결 목록에도 저장됩니다.
+                </p>
+              </div>
+            </>
+          )}
+
+          {compTab === "user" && (
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3 mb-3">
+                <div>
+                  <h3 className="font-semibold text-sm text-gray-700">유저 대결 안내</h3>
+                  <p className="text-xs text-gray-500">
+                    최신 기록으로 오픈 대결을 생성하면 다른 러너가 참여할 수 있습니다. 거리 환산 후 승패를 결정합니다.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={createUserCompetition}
+                  className="text-xs px-3 py-2 rounded-lg border border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                >
+                  오픈 대결 생성
+                </button>
+              </div>
+
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold text-sm text-gray-700">참여 가능한 오픈 대결</h3>
+                  <span className="text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-700">
+                    {openComps.length}개
+                  </span>
+                </div>
+                {openLoading && (
+                  <ul className="space-y-2">
+                    {[1, 2].map((i) => (
+                      <li key={i} className="h-16 skeleton" />
+                    ))}
+                  </ul>
+                )}
+                {!openLoading && openComps.length === 0 && (
+                  <div className="text-sm text-gray-500 bg-slate-50 border border-dashed border-slate-200 rounded-xl p-4">
+                    참여 가능한 대결이 없습니다. 조금 뒤에 다시 확인해 보세요.
+                  </div>
+                )}
+                {!openLoading && openComps.length > 0 && (
+                  <ul className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    {openComps.map((c) => (
+                      <li
+                        key={c._id}
+                        className="border rounded-lg px-3 py-2 text-sm flex justify-between items-start gap-3 hover:border-indigo-200 transition"
+                      >
+                        <div>
+                          <div className="font-medium">거리: {c.distance?.toFixed(2)} km</div>
+                          <div className="text-gray-700">요청자: {c.userId?.nickname || "?"}</div>
+                          <div className="text-xs text-gray-500">
+                            생성: {c.createdAt ? new Date(c.createdAt).toLocaleString() : "-"}
+                          </div>
+                        </div>
+                        <button
+                          className="text-xs bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"
+                          onClick={() => acceptCompetition(c._id)}
+                        >
+                          참여
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </>
+          )}
 
           <div className="border-t pt-4">
             <div className="flex items-center justify-between mb-2">

@@ -447,6 +447,18 @@ export default function Dashboard() {
                     />
                   </div>
                   <p className="text-[11px] text-gray-500 mt-1">예: 25분 30초 → 분=25, 초=30</p>
+                  {(() => {
+                    const d = Number(distance);
+                    const totalSec = Number(timeMin || 0) * 60 + Number(timeSecInput || 0);
+                    const paceText = d > 0 && totalSec > 0 ? formatPace(totalSec, d) : null;
+                    return (
+                      paceText && (
+                        <div className="text-[11px] text-indigo-600 mt-1">
+                          자동 계산 페이스: <span className="font-semibold">{paceText}</span>
+                        </div>
+                      )
+                    );
+                  })()}
                 </div>
               </div>
 

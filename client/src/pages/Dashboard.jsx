@@ -42,6 +42,8 @@ export default function Dashboard() {
   const [leaderboard, setLeaderboard] = useState([]);
   const [lbLoading, setLbLoading] = useState(false);
   const [lbErr, setLbErr] = useState("");
+  const [myRank, setMyRank] = useState(null);
+  const [myStats, setMyStats] = useState(null);
 
   // 대결 애니메이션 오버레이
   const [raceOverlay, setRaceOverlay] = useState({
@@ -98,6 +100,8 @@ export default function Dashboard() {
       setLbErr("");
       const { data } = await api.get("/api/leaderboard/weekly");
       setLeaderboard(data?.rows || []);
+      setMyRank(data?.myRank ?? null);
+      setMyStats(data?.myStats || null);
     } catch (e) {
       console.error(e);
       setLbErr(e?.response?.data?.message || "리더보드 불러오기 오류");
@@ -343,139 +347,195 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen px-4 py-8">
       <div className="max-w-6xl mx-auto space-y-6">
-        <div className="rounded-3xl bg-gradient-to-r from-indigo-600 via-purple-600 to-orange-500 text-white p-8 shadow-xl">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <div className="text-sm uppercase tracking-[0.2em] opacity-80">RunRoyale · Dashboard</div>
-              <h1 className="text-3xl md:text-4xl font-bold mt-2">환영합니다, {user?.nickname || "Runner"}님</h1>
-              <p className="text-white/80 text-sm mt-2">기록을 쌓고, 대결을 만들고, 리더보드에서 순위를 확인하세요.</p>
+        <section className="rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-800 to-orange-500 text-white p-8 shadow-2xl border border-white/10">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div className="space-y-3">
+              <div className="text-xs uppercase tracking-[0.22em] text-white/70">RunRoyale · Dashboard</div>
+              <div>
+                <h1 className="text-3xl md:text-4xl font-extrabold">환영합니다, {user?.nickname || "Runner"}님</h1>
+                <p className="text-white/80 text-sm mt-2">
+                  기록을 쌓고, 대결을 만들고, 리더보드에서 순위를 확인하세요. 오늘도 한 걸음 더 나아가 볼까요?
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <span className="px-3 py-1 rounded-full bg-white/15 text-xs border border-white/20">지난 7일 요약</span>
+                <span className="px-3 py-1 rounded-full bg-white/10 text-xs border border-white/15">대결 & 리더보드</span>
+                <span className="px-3 py-1 rounded-full bg-white/10 text-xs border border-white/15">기록 관리</span>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch gap-3">
               <button
                 onClick={() => navigate("/runs/new")}
-                className="px-4 py-2 rounded-full bg-white text-indigo-700 font-semibold shadow-sm hover:translate-y-[-1px] transition"
+                className="px-5 py-3 rounded-2xl bg-white text-indigo-800 font-semibold shadow-md hover:translate-y-[-1px] transition"
               >
                 기록 작성
               </button>
               <button
                 onClick={createUserCompetition}
-                className="px-4 py-2 rounded-full border border-white/60 text-white hover:bg-white/10 transition"
+                className="px-5 py-3 rounded-2xl bg-white/10 border border-white/30 text-white font-semibold hover:bg-white/15 transition"
               >
                 대결 만들기
               </button>
               <button
-                className="px-3 py-2 rounded-full text-sm bg-white/10 border border-white/30 hover:bg-white/20 transition"
+                className="px-4 py-3 rounded-2xl text-sm bg-white/10 border border-white/20 hover:bg-white/15 transition"
                 onClick={handleLogout}
               >
                 로그아웃
               </button>
             </div>
           </div>
-          <div className="grid sm:grid-cols-3 gap-4 mt-6 text-sm">
-            <div className="bg-white/10 rounded-2xl p-4 border border-white/20 backdrop-blur">
+          <div className="grid sm:grid-cols-3 gap-4 mt-7 text-sm">
+            <div className="bg-white/10 rounded-2xl p-4 border border-white/20 backdrop-blur shadow-inner">
               <div className="text-white/70">총 거리</div>
               <div className="text-2xl font-semibold">{stats.totalDistance.toFixed(2)} km</div>
+              <div className="text-xs text-white/70 mt-1">누적 이동 거리</div>
             </div>
-            <div className="bg-white/10 rounded-2xl p-4 border border-white/20 backdrop-blur">
+            <div className="bg-white/10 rounded-2xl p-4 border border-white/20 backdrop-blur shadow-inner">
               <div className="text-white/70">총 러닝 횟수</div>
               <div className="text-2xl font-semibold">{stats.count} 회</div>
+              <div className="text-xs text-white/70 mt-1">연습/대회 포함</div>
             </div>
-            <div className="bg-white/10 rounded-2xl p-4 border border-white/20 backdrop-blur">
+            <div className="bg-white/10 rounded-2xl p-4 border border-white/20 backdrop-blur shadow-inner">
               <div className="text-white/70">평균 페이스</div>
               <div className="text-2xl font-semibold">{stats.avgPaceSec ? formatPaceValue(stats.avgPaceSec) : "-"}</div>
+              <div className="text-xs text-white/70 mt-1">전체 기록 기준</div>
             </div>
           </div>
-        </div>
+        </section>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <div className="bg-white/90 backdrop-blur p-5 rounded-2xl shadow-md border border-slate-200">
+          <div className="bg-white p-5 rounded-2xl shadow-md border border-slate-200">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">빠른 러닝 기록 입력</h2>
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Quick Add</p>
+                <h2 className="text-lg font-semibold">빠른 러닝 기록 입력</h2>
+                <p className="text-xs text-gray-500 mt-1">거리와 시간을 입력하면 리더보드가 자동 업데이트됩니다.</p>
+              </div>
               <span className="text-[11px] px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 font-semibold">NEW</span>
             </div>
 
             <form onSubmit={onSubmitRun} className="space-y-3">
-              <div>
-                <label className="block text-sm mb-1">거리 (km)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  className="w-full border rounded px-3 py-2"
-                  placeholder="예) 5"
-                  value={distance}
-                  onChange={(e) => setDistance(e.target.value)}
-                />
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="sm:col-span-1">
+                  <label className="block text-sm mb-1">거리 (km)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-200"
+                    placeholder="예) 5"
+                    value={distance}
+                    onChange={(e) => setDistance(e.target.value)}
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm mb-1">시간</label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    className="w-1/2 border rounded px-3 py-2"
-                    placeholder="분"
-                    value={timeMin}
-                    onChange={(e) => setTimeMin(e.target.value)}
-                  />
-                  <input
-                    type="number"
-                    className="w-1/2 border rounded px-3 py-2"
-                    placeholder="초"
-                    value={timeSecInput}
-                    onChange={(e) => setTimeSecInput(e.target.value)}
-                  />
+                <div className="sm:col-span-2">
+                  <label className="block text-sm mb-1">시간</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      className="w-1/2 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-200"
+                      placeholder="분"
+                      value={timeMin}
+                      onChange={(e) => setTimeMin(e.target.value)}
+                    />
+                    <input
+                      type="number"
+                      className="w-1/2 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-200"
+                      placeholder="초"
+                      value={timeSecInput}
+                      onChange={(e) => setTimeSecInput(e.target.value)}
+                    />
+                  </div>
+                  <p className="text-[11px] text-gray-500 mt-1">예: 25분 30초 → 분=25, 초=30</p>
                 </div>
               </div>
 
               {runErr && <div className="text-red-500 text-sm">{runErr}</div>}
 
-              <button
-                type="submit"
-                className="w-full bg-indigo-600 text-white py-2 rounded mt-2 hover:bg-indigo-700 transition font-semibold shadow-sm"
-              >
-                기록 추가
-              </button>
+              <div className="grid sm:grid-cols-2 gap-2 pt-1">
+                <button
+                  type="submit"
+                  className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition font-semibold shadow-sm"
+                >
+                  기록 추가
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDistance("5");
+                    setTimeMin("25");
+                    setTimeSecInput("30");
+                  }}
+                  className="w-full border border-slate-200 text-slate-700 py-2 rounded-lg hover:bg-slate-50 transition text-sm"
+                >
+                  예시 값 채우기
+                </button>
+              </div>
             </form>
           </div>
 
-          <div className="bg-white/90 backdrop-blur p-5 rounded-2xl shadow-md border border-slate-200">
-            <h2 className="text-lg font-semibold mb-4">최근 러닝 기록</h2>
+          <div className="bg-white p-5 rounded-2xl shadow-md border border-slate-200">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Logs</p>
+                <h2 className="text-lg font-semibold">최근 러닝 기록</h2>
+              </div>
+              <span className="text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-600 font-semibold">
+                {runs.length}개
+              </span>
+            </div>
 
-            {runsLoading && <div className="text-sm text-gray-500">불러오는 중..</div>}
-
-            {!runsLoading && runs.length === 0 && (
-              <div className="text-sm text-gray-500">아직 저장된 기록이 없습니다. 먼저 기록을 추가해 보세요.</div>
+            {runsLoading && (
+              <ul className="space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <li key={i} className="h-16 skeleton" />
+                ))}
+              </ul>
             )}
 
-            <ul className="space-y-2 max-h-80 overflow-y-auto">
-              {runs.map((run) => (
-                <li
-                  key={run._id}
-                  className="border border-slate-200 rounded-xl px-3 py-2 text-sm flex justify-between items-start gap-3 hover:border-indigo-200 transition"
-                >
-                  <div>
-                    <div className="font-medium">거리: {run.distance?.toFixed(2)} km</div>
-                    <div className="text-gray-600">시간: {formatTime(run.time)}</div>
-                    <div className="text-gray-500 text-xs">페이스: {formatPace(run.time, run.distance)}</div>
-                  </div>
-                  <div className="text-xs text-gray-400 self-end">
-                    {run.createdAt ? new Date(run.createdAt).toLocaleString() : "-"}
-                    <button
-                      className="ml-2 text-red-500 underline text-[11px]"
-                      disabled={runsDeleting[run._id]}
-                      onClick={() => deleteRun(run._id)}
-                    >
-                      {runsDeleting[run._id] ? "삭제중..." : "삭제"}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            {!runsLoading && runs.length === 0 && (
+              <div className="text-sm text-gray-500 bg-slate-50 border border-dashed border-slate-200 rounded-xl p-4">
+                아직 저장된 기록이 없습니다. 첫 기록을 추가하면 여기에서 최근 기록을 확인할 수 있습니다.
+              </div>
+            )}
+
+            {!runsLoading && runs.length > 0 && (
+              <ul className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                {runs.map((run) => (
+                  <li
+                    key={run._id}
+                    className="border border-slate-200 rounded-xl px-3 py-2 text-sm flex justify-between items-start gap-3 hover:border-indigo-200 hover:-translate-y-[1px] transition"
+                  >
+                    <div>
+                      <div className="font-medium">거리: {run.distance?.toFixed(2)} km</div>
+                      <div className="text-gray-600">시간: {formatTime(run.time)}</div>
+                      <div className="text-gray-500 text-xs">페이스: {formatPace(run.time, run.distance)}</div>
+                    </div>
+                    <div className="text-xs text-gray-400 self-end text-right">
+                      {run.createdAt ? new Date(run.createdAt).toLocaleString() : "-"}
+                      <button
+                        className="ml-2 text-red-500 underline text-[11px]"
+                        disabled={runsDeleting[run._id]}
+                        onClick={() => deleteRun(run._id)}
+                      >
+                        {runsDeleting[run._id] ? "삭제중..." : "삭제"}
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 
-        <div className="bg-white/90 backdrop-blur p-5 rounded-2xl shadow-md border border-slate-200">
-          <h2 className="text-lg font-semibold mb-4">리포트</h2>
+        <div className="bg-white p-5 rounded-2xl shadow-md border border-slate-200">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Report</p>
+              <h2 className="text-lg font-semibold">리포트</h2>
+            </div>
+            <span className="text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-700">최근 10회</span>
+          </div>
 
           <div className="grid gap-6 md:grid-cols-2 mt-6">
             <div className="h-56 md:h-64">
@@ -515,12 +575,28 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white/90 backdrop-blur p-5 rounded-2xl shadow-md border border-slate-200">
-          <h2 className="text-lg font-semibold mb-4">주간 리더보드 (최근 7일)</h2>
+        <div className="bg-white p-5 rounded-2xl shadow-md border border-slate-200">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Leaderboard</p>
+              <h2 className="text-lg font-semibold">주간 리더보드 (최근 7일)</h2>
+            </div>
+            <span className="text-[11px] px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 font-semibold">
+              실시간
+            </span>
+          </div>
           {lbErr && <div className="text-red-500 text-sm mb-2">{lbErr}</div>}
-          {lbLoading && <div className="text-sm text-gray-500">불러오는 중...</div>}
+          {lbLoading && (
+            <ul className="space-y-2">
+              {[1, 2, 3, 4].map((i) => (
+                <li key={i} className="h-14 skeleton" />
+              ))}
+            </ul>
+          )}
           {!lbLoading && leaderboard.length === 0 && (
-            <div className="text-sm text-gray-500">아직 리더보드에 표시할 기록이 없습니다. 러닝을 추가해 보세요.</div>
+            <div className="text-sm text-gray-500 bg-slate-50 border border-dashed border-slate-200 rounded-xl p-4">
+              아직 리더보드에 표시할 기록이 없습니다. 러닝을 추가해 보세요.
+            </div>
           )}
           {!lbLoading && leaderboard.length > 0 && (
             <ul className="divide-y">
@@ -556,16 +632,36 @@ export default function Dashboard() {
               ))}
             </ul>
           )}
+          {myRank !== null && (
+            <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50 p-3 text-sm text-indigo-900 flex items-center justify-between">
+              <div>
+                <div className="font-semibold">내 순위: {myRank}위</div>
+                <div className="text-xs text-indigo-800">
+                  거리 {myStats?.totalDistance?.toFixed(2) || 0} km · 평균 페이스{" "}
+                  {myStats?.avgPaceSec ? formatPaceValue(myStats.avgPaceSec) : "-"}
+                </div>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-white text-indigo-700 text-[11px] font-semibold">
+                최근 7일
+              </span>
+            </div>
+          )}
         </div>
 
-        <div className="bg-white/90 backdrop-blur p-5 rounded-2xl shadow-md border border-slate-200">
-          <h2 className="text-lg font-semibold mb-4">대결 시뮬레이션 / 유저 대결</h2>
+        <div className="bg-white p-5 rounded-2xl shadow-md border border-slate-200">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Competition</p>
+              <h2 className="text-lg font-semibold">대결 시뮬레이션 / 유저 대결</h2>
+            </div>
+            <span className="text-[11px] px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 font-semibold">Live</span>
+          </div>
 
           <form onSubmit={onSubmitCompetition} className="space-y-3 mb-4">
             <div>
               <label className="block text-sm mb-1">봇 난이도</label>
               <select
-                className="w-full border rounded px-3 py-2"
+                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-200"
                 value={difficulty}
                 onChange={(e) => setDifficulty(e.target.value)}
               >
@@ -573,13 +669,14 @@ export default function Dashboard() {
                 <option value="intermediate">중급 (5:30/km)</option>
                 <option value="advanced">상급 (4:30/km)</option>
               </select>
+              <p className="text-[11px] text-gray-500 mt-1">최신 러닝 기록을 기준으로 봇과 대결합니다.</p>
             </div>
 
             {compErr && <div className="text-red-500 text-sm">{compErr}</div>}
 
             <button
               type="submit"
-              className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 transition"
+              className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition font-semibold shadow-sm"
             >
               봇 대결 생성 & 결과 보기
             </button>
@@ -593,20 +690,37 @@ export default function Dashboard() {
           </div>
 
           <div className="border-t pt-4 mb-4">
-            <h3 className="font-semibold mb-2 text-sm text-gray-700">참여 가능한 오픈 대결</h3>
-            {openLoading && <div className="text-sm text-gray-500">불러오는 중..</div>}
-            {!openLoading && openComps.length === 0 && <div className="text-sm text-gray-500">참여 가능한 대결이 없습니다.</div>}
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold text-sm text-gray-700">참여 가능한 오픈 대결</h3>
+              <span className="text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-700">
+                {openComps.length}개
+              </span>
+            </div>
+            {openLoading && (
+              <ul className="space-y-2">
+                {[1, 2].map((i) => (
+                  <li key={i} className="h-16 skeleton" />
+                ))}
+              </ul>
+            )}
+            {!openLoading && openComps.length === 0 && (
+              <div className="text-sm text-gray-500 bg-slate-50 border border-dashed border-slate-200 rounded-xl p-4">
+                참여 가능한 대결이 없습니다. 조금 뒤에 다시 확인해 보세요.
+              </div>
+            )}
             {!openLoading && openComps.length > 0 && (
-              <ul className="space-y-2 max-h-56 overflow-y-auto">
+              <ul className="space-y-2 max-h-56 overflow-y-auto pr-1">
                 {openComps.map((c) => (
                   <li
                     key={c._id}
-                    className="border rounded-lg px-3 py-2 text-sm flex justify-between items-start gap-3"
+                    className="border rounded-lg px-3 py-2 text-sm flex justify-between items-start gap-3 hover:border-indigo-200 transition"
                   >
                     <div>
                       <div className="font-medium">거리: {c.distance?.toFixed(2)} km</div>
                       <div className="text-gray-700">요청자: {c.userId?.nickname || "?"}</div>
-                      <div className="text-xs text-gray-500">생성: {c.createdAt ? new Date(c.createdAt).toLocaleString() : "-"}</div>
+                      <div className="text-xs text-gray-500">
+                        생성: {c.createdAt ? new Date(c.createdAt).toLocaleString() : "-"}
+                      </div>
                     </div>
                     <button
                       className="text-xs bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"
@@ -621,66 +735,83 @@ export default function Dashboard() {
           </div>
 
           <div className="border-t pt-4">
-            <h3 className="font-semibold mb-3">내 대결 목록</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold text-sm text-gray-700">내 대결 목록</h3>
+              <span className="text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-700">
+                {competitions.length}개
+              </span>
+            </div>
 
-            {compLoading && <div className="text-sm text-gray-500">불러오는 중..</div>}
-
-            {!compLoading && competitions.length === 0 && (
-              <div className="text-sm text-gray-500">아직 생성된 대결이 없습니다. 기록을 입력하고 대결을 만들어 보세요.</div>
+            {compLoading && (
+              <ul className="space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <li key={i} className="h-20 skeleton" />
+                ))}
+              </ul>
             )}
 
-            <ul className="space-y-2 max-h-80 overflow-y-auto">
-              {competitions.map((c) => {
-                const currentUserId = user?.id;
-                const ownerId = typeof c.userId === "object" ? c.userId?._id : c.userId;
-                const opponentId = typeof c.opponentId === "object" ? c.opponentId?._id : c.opponentId;
-                const isOwner = ownerId === currentUserId;
-                const myTime = isOwner ? c.time : c.opponentTime;
-                const oppTime = isOwner ? c.opponentTime : c.time;
-                const rawResult = c.result;
-                const displayResult = isOwner ? rawResult : flipResultForOpponent(rawResult);
-                const challengerName =
-                  (typeof c.userId === "object" && (c.userId?.nickname || c.userId?.email)) || "요청자";
-                const opponentName =
-                  (typeof c.opponentId === "object" && (c.opponentId?.nickname || c.opponentId?.email)) || "참가자";
-                const completedAt = c.status === "completed" && c.updatedAt ? c.updatedAt : c.createdAt;
+            {!compLoading && competitions.length === 0 && (
+              <div className="text-sm text-gray-500 bg-slate-50 border border-dashed border-slate-200 rounded-xl p-4">
+                아직 생성된 대결이 없습니다. 기록을 입력하고 대결을 만들어 보세요.
+              </div>
+            )}
 
-                return (
-                  <li
-                    key={c._id}
-                    className="border rounded-xl px-3 py-2 text-sm flex justify-between items-start gap-3"
-                  >
-                    <div>
-                      <div className="font-medium">거리: {c.distance?.toFixed(2)} km</div>
-                      <div className="text-gray-700">내 기록: {myTime ? formatTime(myTime) : "-"}</div>
-                      <div className="text-gray-700">상대 기록: {oppTime ? formatTime(oppTime) : "-"}</div>
-                      <div className="text-gray-500 text-xs">
-                        요청자: {challengerName}
-                        {opponentId && ` / 상대: ${opponentName}`}
+            {!compLoading && competitions.length > 0 && (
+              <ul className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                {competitions.map((c) => {
+                  const currentUserId = user?.id;
+                  const ownerId = typeof c.userId === "object" ? c.userId?._id : c.userId;
+                  const opponentId = typeof c.opponentId === "object" ? c.opponentId?._id : c.opponentId;
+                  const isOwner = ownerId === currentUserId;
+                  const myTime = isOwner ? c.time : c.opponentTime;
+                  const oppTime = isOwner ? c.opponentTime : c.time;
+                  const rawResult = c.result;
+                  const displayResult = isOwner ? rawResult : flipResultForOpponent(rawResult);
+                  const challengerName =
+                    (typeof c.userId === "object" && (c.userId?.nickname || c.userId?.email)) || "요청자";
+                  const opponentName =
+                    (typeof c.opponentId === "object" && (c.opponentId?.nickname || c.opponentId?.email)) || "참가자";
+                  const completedAt = c.status === "completed" && c.updatedAt ? c.updatedAt : c.createdAt;
+
+                  return (
+                    <li
+                      key={c._id}
+                      className="border rounded-xl px-3 py-2 text-sm flex justify-between items-start gap-3 hover:border-indigo-200 transition"
+                    >
+                      <div>
+                        <div className="font-medium">거리: {c.distance?.toFixed(2)} km</div>
+                        <div className="text-gray-700">내 기록: {myTime ? formatTime(myTime) : "-"}</div>
+                        <div className="text-gray-700">상대 기록: {oppTime ? formatTime(oppTime) : "-"}</div>
+                        <div className="text-gray-500 text-xs">
+                          요청자: {challengerName}
+                          {opponentId && ` / 상대: ${opponentName}`}
+                        </div>
+                        <div className="text-gray-500 text-xs">
+                          난이도: {c.difficulty || "-"} / 결과: {resultLabel[displayResult] || displayResult || "-"}
+                          {c.status === "pending" ? (
+                            <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">대기</span>
+                          ) : (
+                            <span className="ml-2 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                              완료
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-gray-500 text-xs">
-                        난이도: {c.difficulty || "-"} / 결과: {resultLabel[displayResult] || displayResult || "-"}
-                        {c.status === "pending" ? (
-                          <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">대기</span>
-                        ) : (
-                          <span className="ml-2 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">완료</span>
-                        )}
+                      <div className="text-xs text-gray-400 text-right">
+                        {completedAt ? new Date(completedAt).toLocaleString() : "-"}
+                        <button
+                          className="ml-2 text-red-500 underline text-[11px]"
+                          disabled={compDeleting[c._id]}
+                          onClick={() => deleteCompetition(c._id)}
+                        >
+                          {compDeleting[c._id] ? "삭제중..." : "삭제"}
+                        </button>
                       </div>
-                    </div>
-                    <div className="text-xs text-gray-400 text-right">
-                      {completedAt ? new Date(completedAt).toLocaleString() : "-"}
-                      <button
-                        className="ml-2 text-red-500 underline text-[11px]"
-                        disabled={compDeleting[c._id]}
-                        onClick={() => deleteCompetition(c._id)}
-                      >
-                        {compDeleting[c._id] ? "삭제중..." : "삭제"}
-                      </button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
         </div>
       </div>

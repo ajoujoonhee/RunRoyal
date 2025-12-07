@@ -33,6 +33,26 @@ export default function RunCreate() {
     return `${m}m ${s}s/km`;
   };
 
+  const computeSplits = () => {
+    let totalDistance = 0;
+    let totalTime = 0;
+
+    for (const split of splits) {
+      const d = parseFloat(split.distance);
+      const pm = parseInt(split.paceMinutes || "0", 10);
+      const ps = parseInt(split.paceSeconds || "0", 10);
+      if (!d || d <= 0) return { error: "스플릿 거리는 0보다 커야 합니다." };
+      if (pm < 0 || ps < 0 || ps >= 60) return { error: "스플릿 페이스 형식이 올바르지 않습니다. (초는 0~59)" };
+      const paceSec = pm * 60 + ps;
+      if (paceSec <= 0) return { error: "스플릿 페이스는 0보다 커야 합니다." };
+
+      totalDistance += d;
+      totalTime += d * paceSec;
+    }
+
+    return { totalDistance, totalTime };
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -303,8 +323,8 @@ export default function RunCreate() {
                     <li>평균 페이스: <span className="font-semibold">{splitError ? "-" : paceDisplay}</span></li>
                     {splitError && <li className="text-red-500">{splitError}</li>}
                   </ul>
-                );
-              }
+  );
+}
 
               const d = parseFloat(distance || "0");
               const min = parseInt(minutes || "0", 10);
@@ -358,22 +378,3 @@ export default function RunCreate() {
     </div>
   );
 }
-  const computeSplits = () => {
-    let totalDistance = 0;
-    let totalTime = 0;
-
-    for (const split of splits) {
-      const d = parseFloat(split.distance);
-      const pm = parseInt(split.paceMinutes || "0", 10);
-      const ps = parseInt(split.paceSeconds || "0", 10);
-      if (!d || d <= 0) return { error: "스플릿 거리는 0보다 커야 합니다." };
-      if (pm < 0 || ps < 0 || ps >= 60) return { error: "스플릿 페이스 형식이 올바르지 않습니다. (초는 0~59)" };
-      const paceSec = pm * 60 + ps;
-      if (paceSec <= 0) return { error: "스플릿 페이스는 0보다 커야 합니다." };
-
-      totalDistance += d;
-      totalTime += d * paceSec;
-    }
-
-    return { totalDistance, totalTime };
-  };

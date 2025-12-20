@@ -9,6 +9,7 @@ import authRoutes from "./routes/auth.js";
 import runRoutes from "./routes/runs.js";
 import competitionRoutes from "./routes/competitions.js";
 import leaderboardRoutes from "./routes/leaderboard.js";
+import coachRoutes from "./routes/coach.js";
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/runs", runRoutes);
 app.use("/api/competitions", competitionRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
+app.use("/api/coach", coachRoutes);
 
 // 서버 실행
 (async () => {

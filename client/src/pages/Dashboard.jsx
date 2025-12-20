@@ -28,6 +28,9 @@ export default function Dashboard() {
   const [runsLoading, setRunsLoading] = useState(false);
   const [runsDeleting, setRunsDeleting] = useState({});
   const [runErr, setRunErr] = useState("");
+  const [coach, setCoach] = useState(null);
+  const [coachLoading, setCoachLoading] = useState(false);
+  const [coachErr, setCoachErr] = useState("");
 
   // 대결 관련 상태
   const [difficulty, setDifficulty] = useState("beginner");
@@ -111,11 +114,26 @@ export default function Dashboard() {
     }
   };
 
+  const fetchCoaching = async () => {
+    try {
+      setCoachLoading(true);
+      setCoachErr("");
+      const { data } = await api.get("/api/coach/insights");
+      setCoach(data);
+    } catch (e) {
+      console.error(e);
+      setCoachErr(e?.response?.data?.message || "AI 코칭 불러오기 오류");
+    } finally {
+      setCoachLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchRuns();
     fetchCompetitions();
     fetchLeaderboard();
     fetchOpenCompetitions();
+    fetchCoaching();
 
     const socketUrl =
       (import.meta.env.VITE_SOCKET_URL || (import.meta.env.VITE_API_URL || "").replace(/\/api$/, "")) ||
@@ -160,7 +178,8 @@ export default function Dashboard() {
       setDistance("");
       setTimeMin("");
       setTimeSecInput("");
-      fetchRuns();
+      await fetchRuns();
+      await fetchCoaching();
     } catch (e) {
       console.error(e);
       setRunErr(e?.response?.data?.message || "러닝 기록 저장 실패가 발생했습니다.");
@@ -258,6 +277,7 @@ export default function Dashboard() {
       setRunsDeleting((prev) => ({ ...prev, [id]: true }));
       await api.delete(`/api/runs/${id}`);
       await fetchRuns();
+      await fetchCoaching();
     } catch (e) {
       console.error(e);
       setRunErr(e?.response?.data?.message || "기록 삭제 실패");
@@ -403,6 +423,98 @@ export default function Dashboard() {
             </div>
           </div>
         </section>
+
+        <div className="bg-white p-5 rounded-2xl shadow-md border border-slate-200">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">AI Coach</p>
+              <h2 className="text-lg font-semibold">기록 기반 코칭</h2>
+              <p className="text-xs text-gray-500">최근 30회 러닝을 요약해 간단한 코칭을 제공합니다.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {coach?.generatedAt && (
+                <span className="text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-700">
+                  {new Date(coach.generatedAt).toLocaleString()}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={fetchCoaching}
+                disabled={coachLoading}
+                className="text-xs px-3 py-2 rounded-lg border border-indigo-200 text-indigo-700 hover:bg-indigo-50 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {coachLoading ? "분석 중..." : "다시 분석"}
+              </button>
+            </div>
+          </div>
+          {coachErr && <div className="text-red-500 text-sm mb-2">{coachErr}</div>}
+          {coachLoading && (
+            <div className="space-y-2">
+              <div className="h-4 w-40 skeleton" />
+              <div className="h-16 skeleton" />
+            </div>
+          )}
+          {!coachLoading && coach && (
+            <div className="space-y-4">
+              <div className="text-sm text-gray-700 bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3">
+                {coach.summary || "기록을 바탕으로 인사이트를 준비했어요."}
+              </div>
+              <div className="grid sm:grid-cols-3 gap-3">
+                <div className="border rounded-xl p-3 bg-slate-50">
+                  <div className="text-xs text-gray-500">최근 페이스</div>
+                  <div className="text-lg font-semibold text-slate-900">
+                    {coach.metrics?.latestPaceSec ? formatPaceValue(coach.metrics.latestPaceSec) : "-"}
+                  </div>
+                  <div className="text-[11px] text-gray-500">
+                    최고 {coach.metrics?.bestPaceSec ? formatPaceValue(coach.metrics.bestPaceSec) : "-"}
+                  </div>
+                </div>
+                <div className="border rounded-xl p-3 bg-slate-50">
+                  <div className="text-xs text-gray-500">주간 거리</div>
+                  <div className="text-lg font-semibold text-slate-900">
+                    {(coach.metrics?.totalDistanceWeek ?? 0).toFixed(2)} km
+                  </div>
+                  <div className="text-[11px] text-gray-500">
+                    주 {coach.metrics?.weekRunCount ?? 0}회 러닝
+                  </div>
+                </div>
+                <div className="border rounded-xl p-3 bg-slate-50">
+                  <div className="text-xs text-gray-500">최장 거리</div>
+                  <div className="text-lg font-semibold text-slate-900">
+                    {(coach.metrics?.longestDistance ?? 0).toFixed(2)} km
+                  </div>
+                  <div className="text-[11px] text-gray-500">총 {coach.metrics?.runCount || 0}회 기록</div>
+                </div>
+              </div>
+              {coach.insights?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-sm text-gray-700 mb-2">인사이트</h3>
+                  <ul className="space-y-2">
+                    {coach.insights.map((item, idx) => (
+                      <li key={idx} className="flex gap-2 items-start">
+                        <span className="mt-1 text-indigo-500">•</span>
+                        <div>
+                          <div className="text-sm font-semibold text-gray-800">{item.title}</div>
+                          <div className="text-sm text-gray-600">{item.detail}</div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {coach.actions?.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-sm text-gray-700 mb-2">다음 추천</h3>
+                  <ol className="space-y-1 list-decimal list-inside text-sm text-gray-700">
+                    {coach.actions.map((act, idx) => (
+                      <li key={idx}>{act}</li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="grid gap-6 md:grid-cols-2">
           <div className="bg-white p-5 rounded-2xl shadow-md border border-slate-200">
